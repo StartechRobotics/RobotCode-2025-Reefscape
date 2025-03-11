@@ -94,8 +94,8 @@ public class chassis extends SubsystemBase {
       r_encoder.reset();
       l_encoder.setDistancePerPulse(encoder_dpp);
       r_encoder.setDistancePerPulse(encoder_dpp);
-      l_encoder.setReverseDirection(true); 
-      r_encoder.setReverseDirection(false);
+      l_encoder.setReverseDirection(false); 
+      r_encoder.setReverseDirection(true);
 
       m_odometry = new DifferentialDriveOdometry(
         gyro.getRotation2d(), 
@@ -405,6 +405,7 @@ public class chassis extends SubsystemBase {
     return true;
   }
 
+  @Deprecated
   public void setOrientationAngle(double target){
     double current_theta = gyro.getAngle();
     double error = target - current_theta;
@@ -454,6 +455,8 @@ public class chassis extends SubsystemBase {
         (Math.abs(controller.getRawAxis(Constants.ID_JOYSTICK_ROT)) > Constants.kDeadBandRot ? controller.getRawAxis(Constants.ID_JOYSTICK_ROT) : 0)), 
       c_chassis);
   }
+
+  @Deprecated
   public Command drivePS4Command(chassis c_chassis, PS4Controller controller){ 
     return Commands.run(
       () -> c_chassis.arcadeDrive(
@@ -466,6 +469,7 @@ public class chassis extends SubsystemBase {
     return this.runOnce(() -> c_chassis.gyro.reset());
   }
 
+  @Deprecated
   public Command setOrientationCommand(chassis c_chassis, double theta){
     return Commands.run(()-> c_chassis.setOrientationAngle(theta), c_chassis);
   }

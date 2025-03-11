@@ -89,7 +89,10 @@ public class RobotContainer {
     quasibwdTrigger.onTrue(m_elevator.sysIdQuasistatic(SysIdRoutine.Direction.kReverse, m_elevator));
     dynambwdTrigger.onTrue(m_elevator.sysIdDynamic(SysIdRoutine.Direction.kReverse, m_elevator));
     stopTestTrigger.onTrue(m_elevator.dryStopCommand(m_elevator));
-    
+  }
+
+  public void StatesMachine(){
+    // Add states machine here
   }
   
   public Command getAutonomousCommand() {
