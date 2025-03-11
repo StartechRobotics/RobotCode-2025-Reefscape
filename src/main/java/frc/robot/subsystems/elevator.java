@@ -30,16 +30,16 @@ import frc.robot.Constants;
 
 public class elevator extends SubsystemBase {
 
-  public final SparkMax master_neoL= new SparkMax(Constants.ID_ELEVATOR_IZQ,MotorType.kBrushless);;
-  public final SparkMax follower_neoR = new SparkMax(Constants.ID_ELEVATOR_DER, MotorType.kBrushless);;
+  private final SparkMax master_neoL= new SparkMax(Constants.ID_ELEVATOR_IZQ,MotorType.kBrushless);
+  private final SparkMax follower_neoR = new SparkMax(Constants.ID_ELEVATOR_DER, MotorType.kBrushless);
   private final SparkMaxConfig masterConfig = new SparkMaxConfig();
   private final SparkMaxConfig followerConfig = new SparkMaxConfig();
   private final RelativeEncoder masterEncoder= master_neoL.getEncoder();
   private final RelativeEncoder followEncoder= follower_neoR.getEncoder();
-  public final boolean followerInverted = true;
+  private final boolean followerInverted = true;
   public final double distancePerRotation = Constants.kElevDistancePerRotMeters;
-  public final PIDController pidController = new PIDController(Constants.kP_elev, Constants.kI_elev, Constants.kD_elev);
-  public final ElevatorFeedforward m_feedforward = new ElevatorFeedforward(Constants.kS_elev, Constants.kG_elev, Constants.kV_elev);
+  private final PIDController pidController = new PIDController(Constants.kP_elev, Constants.kI_elev, Constants.kD_elev);
+  private final ElevatorFeedforward m_feedforward = new ElevatorFeedforward(Constants.kS_elev, Constants.kG_elev, Constants.kV_elev);
 
   public elevator() {
     masterConfig.idleMode(IdleMode.kBrake);
@@ -118,8 +118,12 @@ public class elevator extends SubsystemBase {
     if(Math.abs(voltsMagnitude)> Constants.MAX_ELEV_VOLTS){
       voltsMagnitude = voltsMagnitude>0 ? Constants.MAX_ELEV_VOLTS : -1* Constants.MAX_ELEV_VOLTS;
     }
-    motor_volts.mut_setMagnitude(voltsMagnitude);
-    master_neoL.setVoltage(motor_volts);
+    if (voltsMagnitude == 0){
+      master_neoL.stopMotor();
+    }else{
+      motor_volts.mut_setMagnitude(voltsMagnitude);
+      master_neoL.setVoltage(motor_volts);
+    }
   }
 
   public void driveVoltsPercent(double voltsPercent){
