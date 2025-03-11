@@ -27,7 +27,7 @@ public class shooter extends SubsystemBase {
   public SparkMaxConfig frontConfig = new SparkMaxConfig();
   public final MutVoltage intakeVolts = new MutVoltage(8.5, 0, Volts);
   public final MutVoltage outVolts = new MutVoltage(10, 0, Volts);
-  public final ColorSensorV3 colorSensor = new ColorSensorV3(Port.kOnboard);
+  // public final ColorSensorV3 colorSensor = new ColorSensorV3(Port.kOnboard);
 
   public shooter() {
     backConfig.idleMode(IdleMode.kBrake);
@@ -66,9 +66,9 @@ public class shooter extends SubsystemBase {
   }
 
   // -------- Getter Methods-----------
-  public ColorSensorV3 getSensor(){
-    return colorSensor;
-  }
+  // public ColorSensorV3 getSensor(){
+  //   return colorSensor;
+  // }
   // -------- Lambda Commands ---------
 
   public Command manualShooterCommand(XboxController controller, shooter c_shooter){

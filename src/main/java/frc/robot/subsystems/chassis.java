@@ -94,8 +94,8 @@ public class chassis extends SubsystemBase {
       r_encoder.reset();
       l_encoder.setDistancePerPulse(encoder_dpp);
       r_encoder.setDistancePerPulse(encoder_dpp);
-      l_encoder.setReverseDirection(true); 
-      r_encoder.setReverseDirection(false);
+      l_encoder.setReverseDirection(false); 
+      r_encoder.setReverseDirection(true);
 
       m_odometry = new DifferentialDriveOdometry(
         gyro.getRotation2d(), 
