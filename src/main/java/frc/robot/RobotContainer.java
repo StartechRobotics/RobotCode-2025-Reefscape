@@ -27,6 +27,8 @@ public class RobotContainer {
   public chassis m_chassis = new chassis(drive_controller);
   public shooter m_shooter = new shooter();
   public elevator m_elevator = new elevator();
+  public hopper m_hopper = new hopper();
+  // public grabber m_grabber = new grabber();
 
   // public ColorSensorV3 shooterSensor = m_shooter.getSensor();
 
@@ -46,6 +48,9 @@ public class RobotContainer {
   public Trigger shootTrigger = new JoystickButton(mech_controller, XboxController.Button.kY.value);
   public Trigger intakeSequenceTrigger = new JoystickButton(mech_controller, XboxController.Button.kB.value);
   // public Trigger coralInTrigger = new Trigger(()->{return shooterSensor.getProximity() > Constants.kShooterSensorThreshold;});
+
+  // Hopper Triggers
+  public Trigger openHoppTrigger = new JoystickButton(test_controller, XboxController.Button.kA.value);
 
   private final SendableChooser<Command> autoChooser;
 
@@ -68,6 +73,7 @@ public class RobotContainer {
   private void defaultCommands() {
     m_shooter.setDefaultCommand(m_shooter.manualShooterCommand(mech_controller, m_shooter));
     m_elevator.setDefaultCommand(m_elevator.driveCommand(m_elevator, mech_controller));
+    m_hopper.setDefaultCommand(m_hopper.closeCommand());
   }
   
   private void configureBindings() {
@@ -80,6 +86,8 @@ public class RobotContainer {
     shooterStopTrigger.onTrue(m_shooter.stopShooterCommand(m_shooter));
     intakeSequenceTrigger.onTrue(m_shooter.intakeTimeCommand(m_shooter));
     // coralInTrigger.onTrue(m_shooter.stopShooterCommand(m_shooter));
+    openHoppTrigger.onTrue(m_hopper.openCommand());
+    openHoppTrigger.onFalse(m_hopper.closeCommand()); 
   }
 
   public void RobotCharacterizations(){
