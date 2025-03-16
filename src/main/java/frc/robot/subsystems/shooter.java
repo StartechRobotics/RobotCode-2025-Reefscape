@@ -80,22 +80,22 @@ public class shooter extends SubsystemBase {
   }
 
   public Command stopShooterCommand(){
-    return Commands.runOnce(() -> this.stopMotors());
+    return Commands.runOnce(this::stopMotors);
   }
 
   public Command intakeCommand(){
-    return Commands.runOnce(()-> this.rollIntake());
+    return Commands.runOnce(this::rollIntake);
   }
 
   public SequentialCommandGroup intakeTimeCommand(){
     return new SequentialCommandGroup(
-      Commands.runOnce(()->this.rollIntake()),
+      Commands.runOnce(this::rollIntake),
       new WaitCommand(0.2),
-      Commands.runOnce(()->this.stopMotors())
+      Commands.runOnce(this::stopMotors)
     );
   }
 
   public Command shootCommand(){
-    return Commands.runOnce(()->this.out());
+    return Commands.runOnce(this::out);
   }
 }
