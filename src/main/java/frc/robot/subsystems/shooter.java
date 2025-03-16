@@ -1,8 +1,8 @@
 package frc.robot.subsystems;
 
-import static edu.wpi.first.units.Units.Volts;
+// import static edu.wpi.first.units.Units.Volts;
 
-import com.revrobotics.ColorSensorV3;
+// import com.revrobotics.ColorSensorV3;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
@@ -10,9 +10,9 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
-import edu.wpi.first.units.measure.MutVoltage;
+// import edu.wpi.first.units.measure.MutVoltage;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.I2C.Port;
+// import edu.wpi.first.wpilibj.I2C.Port;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -25,8 +25,9 @@ public class shooter extends SubsystemBase {
   public final SparkMax m_front = new SparkMax(Constants.ID_SHOOTER_FRONT, MotorType.kBrushless);
   public SparkMaxConfig backConfig = new SparkMaxConfig();
   public SparkMaxConfig frontConfig = new SparkMaxConfig();
-  public final MutVoltage intakeVolts = new MutVoltage(8.5, 0, Volts);
-  public final MutVoltage outVolts = new MutVoltage(10, 0, Volts);
+
+  // private static final MutVoltage intakeVolts = new MutVoltage(8.5, 0, Volts);
+  // private static final MutVoltage outVolts = new MutVoltage(10, 0, Volts);
   // public final ColorSensorV3 colorSensor = new ColorSensorV3(Port.kOnboard);
 
   public shooter() {
@@ -71,30 +72,30 @@ public class shooter extends SubsystemBase {
   // }
   // -------- Lambda Commands ---------
 
-  public Command manualShooterCommand(XboxController controller, shooter c_shooter){
-    return Commands.run(()->c_shooter.manualDrive(
+  public Command manualShooterCommand(XboxController controller){
+    return Commands.run(()->this.manualDrive(
       controller.getRawAxis(XboxController.Axis.kRightTrigger.value), 
       controller.getRawAxis(XboxController.Axis.kLeftTrigger.value)
-    ), c_shooter);
+    ), this);
   }
 
-  public Command stopShooterCommand(shooter c_shooter){
-    return Commands.runOnce(() -> stopMotors());
+  public Command stopShooterCommand(){
+    return Commands.runOnce(() -> this.stopMotors());
   }
 
-  public Command intakeCommand(shooter c_shooter){
-    return Commands.runOnce(()-> c_shooter.rollIntake());
+  public Command intakeCommand(){
+    return Commands.runOnce(()-> this.rollIntake());
   }
 
-  public SequentialCommandGroup intakeTimeCommand(shooter c_shooter){
+  public SequentialCommandGroup intakeTimeCommand(){
     return new SequentialCommandGroup(
-      Commands.runOnce(()->c_shooter.rollIntake()),
+      Commands.runOnce(()->this.rollIntake()),
       new WaitCommand(0.2),
-      Commands.runOnce(()->c_shooter.stopMotors())
+      Commands.runOnce(()->this.stopMotors())
     );
   }
 
-  public Command shootCommand(shooter c_shooter){
-    return Commands.runOnce(()->c_shooter.out());
+  public Command shootCommand(){
+    return Commands.runOnce(()->this.out());
   }
 }

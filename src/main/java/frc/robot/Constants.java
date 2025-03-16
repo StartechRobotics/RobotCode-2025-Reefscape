@@ -56,7 +56,7 @@ public class Constants {
     public static final double kS_elev = 0;
     public static final double kG_elev = 0;
     public static final double kV_elev = 0;
-    public static final double MAX_ELEV_SPEED_PERCENT = 0.8;
+    public static final double MAX_ELEV_SPEED_PERCENT = 0.9;
     public static final double MAX_ELEV_VOLTS = 12*MAX_ELEV_SPEED_PERCENT;
     public static final double kElevDistancePerRotCM = 100* 1/27 * (Math.PI * Units.inchesToMeters(1.29));
     public static final double kElevatorBottomPosition = 0;

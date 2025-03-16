@@ -38,7 +38,7 @@ public class elevator extends SubsystemBase {
   private final RelativeEncoder followEncoder= follower_neoR.getEncoder();
   private final boolean masterInverted = false;
   private final boolean followerInverted = !masterInverted;
-  public final double distancePerRotation = Constants.kElevDistancePerRotCM;
+  public static final double distancePerRotation = Constants.kElevDistancePerRotCM;
   private final PIDController pidController = new PIDController(Constants.kP_elev, Constants.kI_elev, Constants.kD_elev);
   private final ElevatorFeedforward m_feedforward = new ElevatorFeedforward(Constants.kS_elev, Constants.kG_elev, Constants.kV_elev);
 
@@ -54,6 +54,8 @@ public class elevator extends SubsystemBase {
   }
   
   // -----------SYSID FOR FEEDFORWARD -------------------------------
+
+  
   private final MutVoltage m_appliedVoltage = Volts.mutable(0);
   private final MutDistance m_distance = Meters.mutable(0);
   private final MutLinearVelocity m_velocity = MetersPerSecond.mutable(0);
@@ -83,10 +85,10 @@ public class elevator extends SubsystemBase {
           // Tell SysId to make generated commands require this subsystem, suffix test state in
           // WPILog with this subsystem's name ("elevator")
           this));
-  public Command sysIdDynamic(SysIdRoutine.Direction direction, elevator elevator) {
+  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
     return m_sysIdRoutine.dynamic(direction);
   }
-  public Command sysIdQuasistatic(SysIdRoutine.Direction direction, elevator elevator) {
+  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
     return m_sysIdRoutine.quasistatic(direction);
   }
 
@@ -209,29 +211,29 @@ public class elevator extends SubsystemBase {
 
   // ------------ LAMBDA COMMANDS ---------------
 
-  public Command driveCommand (elevator c_elevator, XboxController controller){
+  public Command driveCommand (XboxController controller){
     return Commands.run(
-      ()->c_elevator.drive(
+      ()->this.drive(
         controller.getRawAxis(XboxController.Axis.kRightTrigger.value)
         -controller.getRawAxis(XboxController.Axis.kLeftTrigger.value))
-      , c_elevator);
+      , this);
   }
 
-  public Command driveToTargetCommand(double position, elevator c_elevator){
+  public Command driveToTargetCommand(double position){
     return Commands.run(
       ()->
-        c_elevator.pidTarget(position), 
-        c_elevator)
-      .until(() -> c_elevator.getDistanceMeters() == position)
+        this.pidTarget(position), 
+        this)
+      .until(() -> this.getDistanceMeters() == position)
       .andThen(
       Commands.runOnce(
         ()->
-        c_elevator.dryStop()
-      , c_elevator));
+        this.dryStop()
+      , this));
   }
 
-  public Command dryStopCommand(elevator c_elevator ){
-    return Commands.runOnce(()-> c_elevator.dryStop());
+  public Command dryStopCommand(){
+    return Commands.runOnce(()-> this.dryStop());
   }
 
   

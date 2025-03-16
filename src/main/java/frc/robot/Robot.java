@@ -1,7 +1,6 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -11,22 +10,22 @@ public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
   private final RobotContainer m_robotContainer;
   private final String defaultDriveController = "XboxDrive";
-  private final String altDriveController = "PS4Drive";
   private String controller_type_selected;
   private final SendableChooser<String> m_driveControllerChooser = new SendableChooser<>();
 
   public Robot() {
     m_robotContainer = new RobotContainer();
-
     m_driveControllerChooser.setDefaultOption("Xbox controller", defaultDriveController);
-    m_driveControllerChooser.addOption("PS4 dual shock", altDriveController);
+  }
+
+  @Override
+  public void robotInit(){
     SmartDashboard.putData(m_driveControllerChooser);
   }
 
   @Override
   public void robotPeriodic() {
     CommandScheduler.getInstance().run();
-    SmartDashboard.putBoolean("Solenoid BTN",m_robotContainer.test_controller.getRawButton(XboxController.Button.kA.value));
   }
 
   @Override
@@ -60,11 +59,8 @@ public class Robot extends TimedRobot {
     }
     controller_type_selected = m_driveControllerChooser.getSelected();
     switch (controller_type_selected) {
-      case altDriveController:
-        m_robotContainer.m_chassis.setDefaultCommand(m_robotContainer.m_chassis.drivePS4Command(m_robotContainer.m_chassis, m_robotContainer.ps4Controller));
-        break;
       default:
-        m_robotContainer.m_chassis.setDefaultCommand(m_robotContainer.m_chassis.driveCommand(m_robotContainer.m_chassis, m_robotContainer.drive_controller));
+        m_robotContainer.m_chassis.setDefaultCommand(m_robotContainer.m_chassis.driveCommand(m_robotContainer.drive_controller));
       break;
     }
       

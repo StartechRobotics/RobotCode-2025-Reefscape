@@ -4,7 +4,6 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 // import com.revrobotics.ColorSensorV3;
 
-import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -21,10 +20,9 @@ public class RobotContainer {
   public XboxController drive_controller = new XboxController(Constants.ID_DRIVER_CHASSIS);
   public XboxController mech_controller = new XboxController(Constants.ID_DRIVER_MECH);
   public XboxController test_controller = new XboxController(Constants.ID_TEST_CONTROLLER);
-  public PS4Controller ps4Controller = new PS4Controller(1);
 
   // Subsystems Instances
-  public chassis m_chassis = new chassis(drive_controller);
+  public chassis m_chassis = new chassis();
   public shooter m_shooter = new shooter();
   public elevator m_elevator = new elevator();
   public hopper m_hopper = new hopper();
@@ -59,32 +57,32 @@ public class RobotContainer {
     defaultCommands();
 
     autoChooser = AutoBuilder.buildAutoChooser("auto 1");
-    autoChooser.addOption("test auto", new PathPlannerAuto("test auto"));
+    autoChooser.setDefaultOption("test auto (Default Momentan)", new PathPlannerAuto("test auto"));
     autoChooser.addOption("auto 0", new PathPlannerAuto("auto 0"));
-    autoChooser.addOption("auto 0", new PathPlannerAuto("auto 1"));
+    autoChooser.addOption("auto 1", new PathPlannerAuto("auto 1"));
     SmartDashboard.putData("AutoChooser",autoChooser);
 
-    SmartDashboard.putData("Reset Gyro", m_chassis.resetGyroCommand(m_chassis));
-    SmartDashboard.putData("Reset Odometry", m_chassis.resetOdometryCommand(m_chassis));
+    SmartDashboard.putData("Reset Gyro", m_chassis.resetGyroCommand());
+    SmartDashboard.putData("Reset Odometry", m_chassis.resetOdometryCommand());
   }
 
   // -------- Methods ----------
 
   private void defaultCommands() {
-    m_shooter.setDefaultCommand(m_shooter.manualShooterCommand(mech_controller, m_shooter));
-    m_elevator.setDefaultCommand(m_elevator.driveCommand(m_elevator, mech_controller));
+    m_shooter.setDefaultCommand(m_shooter.manualShooterCommand(mech_controller));
+    m_elevator.setDefaultCommand(m_elevator.driveCommand(mech_controller));
     m_hopper.setDefaultCommand(m_hopper.closeCommand());
   }
   
   private void configureBindings() {
     stopChassisTrigger.onTrue(new SequentialCommandGroup(
-      m_chassis.stopCommand(m_chassis), 
-      m_chassis.clearFaultsCommand(m_chassis)
+      m_chassis.stopCommand(), 
+      m_chassis.clearFaultsCommand()
     ));
-    intakeTrigger.onTrue(m_shooter.intakeCommand(m_shooter));
-    shootTrigger.onTrue(m_shooter.shootCommand(m_shooter));
-    shooterStopTrigger.onTrue(m_shooter.stopShooterCommand(m_shooter));
-    intakeSequenceTrigger.onTrue(m_shooter.intakeTimeCommand(m_shooter));
+    intakeTrigger.onTrue(m_shooter.intakeCommand());
+    shootTrigger.onTrue(m_shooter.shootCommand());
+    shooterStopTrigger.onTrue(m_shooter.stopShooterCommand());
+    intakeSequenceTrigger.onTrue(m_shooter.intakeTimeCommand());
     // coralInTrigger.onTrue(m_shooter.stopShooterCommand(m_shooter));
     openHoppTrigger.onTrue(m_hopper.openCommand());
     openHoppTrigger.onFalse(m_hopper.closeCommand()); 
@@ -92,11 +90,11 @@ public class RobotContainer {
 
   public void RobotCharacterizations(){
     // SysID TEST COMMAND BINDINGS - TEMP DISABLED
-    dynamfwdTrigger.onTrue(m_elevator.sysIdDynamic(SysIdRoutine.Direction.kForward, m_elevator));
-    quasifwdTrigger.onTrue(m_elevator.sysIdQuasistatic(SysIdRoutine.Direction.kForward, m_elevator));
-    quasibwdTrigger.onTrue(m_elevator.sysIdQuasistatic(SysIdRoutine.Direction.kReverse, m_elevator));
-    dynambwdTrigger.onTrue(m_elevator.sysIdDynamic(SysIdRoutine.Direction.kReverse, m_elevator));
-    stopTestTrigger.onTrue(m_elevator.dryStopCommand(m_elevator));
+    dynamfwdTrigger.onTrue(m_elevator.sysIdDynamic(SysIdRoutine.Direction.kForward));
+    quasifwdTrigger.onTrue(m_elevator.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+    quasibwdTrigger.onTrue(m_elevator.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+    dynambwdTrigger.onTrue(m_elevator.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+    stopTestTrigger.onTrue(m_elevator.dryStopCommand());
   }
 
   public void StatesMachine(){
@@ -104,15 +102,16 @@ public class RobotContainer {
   }
   
   public Command getAutonomousCommand() {
-    return autoChooser.getSelected();
+    Command autoCommand = autoChooser.getSelected();
+    return autoCommand != null ? autoCommand : new WaitCommand(0); // Evita NullPointerException
   }
 
   // Compound Commands  --------
   public Command shootAndDropSequence(){
     return new SequentialCommandGroup(
-      m_shooter.shootCommand(m_shooter),
-      new WaitCommand(1).andThen(m_shooter.stopShooterCommand(m_shooter)),
-      m_elevator.driveToTargetCommand(Constants.kElevatorBottomPosition, m_elevator)
+      m_shooter.shootCommand(),
+      new WaitCommand(1).andThen(m_shooter.stopShooterCommand()),
+      m_elevator.driveToTargetCommand(Constants.kElevatorBottomPosition)
     );
   }
 }
