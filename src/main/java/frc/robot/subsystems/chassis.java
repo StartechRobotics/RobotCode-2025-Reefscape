@@ -19,7 +19,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.PS4Controller;
 import edu.wpi.first.wpilibj.RobotController;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
@@ -35,7 +34,6 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.ModuleConfig;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPLTVController;
-// import com.ctre.phoenix.motorcontrol.InvertType;
 
 public class chassis extends SubsystemBase {
 
@@ -44,36 +42,31 @@ public class chassis extends SubsystemBase {
     private final WPI_TalonSRX izq_2 = new WPI_TalonSRX(Constants.ID_IZQ_2);
     private final WPI_TalonSRX der_1 = new WPI_TalonSRX(Constants.ID_DER_1);
     private final WPI_TalonSRX der_2 = new WPI_TalonSRX(Constants.ID_DER_2);
-    // ** MotorcontrollerGroups reemplazados por Master (1) y Follower (2)
+    // ** MotorcontrollerGroups reemplazados por Master (1) y Follower (2) por fallos en la caracterización del robot
+    // ** Posiblemente regrese a configuracion Master-Slave si es necesario ahorrar recursos en el futuro
     private final MotorControllerGroup group_l = new MotorControllerGroup(izq_1, izq_2);
     private final MotorControllerGroup group_r = new MotorControllerGroup(der_1, der_2);
 
     // class vars odom-related
     private final DifferentialDrive differentialDrive = new DifferentialDrive(group_l,group_r);
     private final DifferentialDriveKinematics kinematics = Constants.kDriveKinematics;
-    private DifferentialDriveOdometry m_odometry;
-    private Encoder l_encoder;
-    private Encoder r_encoder;
+    private DifferentialDriveOdometry m_odometry = null;
+    private Encoder l_encoder = null;
+    private Encoder r_encoder = null;
     private final ADXRS450_Gyro gyro = new ADXRS450_Gyro(); 
-    public Timer timer = new Timer();
     public static final double kRot = Constants.kRot;
-    public static double speed_monitor;
-    public static double rot_monitor;
-    public XboxController driver_controller;
-    public double last_encoder_R = 0;
-    public double last_encoder_L = 0;
-    public double last_timer;
-    public boolean odometry_engaged;
-    public static final double encoder_dpp = (Math.PI * Units.inchesToMeters(6))/128;
+    public double speed_monitor;
+    public double rot_monitor;
+    private boolean odometry_engaged;
+    private static final double encoder_dpp = (Math.PI * Units.inchesToMeters(6))/128;
 
     // class vars sysid-related
     private final MutVoltage m_appliedVoltage = Volts.mutable(0);
     private final MutDistance m_distance = Meters.mutable(0);
     private final MutLinearVelocity m_velocity = MetersPerSecond.mutable(0);
     
-  public chassis(XboxController driverJoystick) {
+  public chassis() {
     setBrakeMode();
-    driver_controller = driverJoystick;
     group_r.setInverted(true);
     // izq_2.follow(izq_1);
     // der_2.follow(der_1);
@@ -162,7 +155,6 @@ public class chassis extends SubsystemBase {
 
     resetOdometry();
     gyro.reset();
-    timer.start();
   }
 
   // End of constructor------------------
@@ -211,10 +203,10 @@ public class chassis extends SubsystemBase {
             // Tell SysId to make generated commands require this subsystem, suffix test state in
             // WPILog with this subsystem's name ("drive")
             this));
-  public Command sysIdDynamic(SysIdRoutine.Direction direction, chassis c_chassis) {
+  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
     return m_sysIdRoutine.dynamic(direction);
   }
-  public Command sysIdQuasistatic(SysIdRoutine.Direction direction, chassis c_chassis) {
+  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
     return m_sysIdRoutine.quasistatic(direction);
   }
 
@@ -251,10 +243,8 @@ public class chassis extends SubsystemBase {
     SmartDashboard.putNumber("Left speed M/s", l_encoder.getRate());
     SmartDashboard.putNumber("Right speed M/s", r_encoder.getRate());
     SmartDashboard.putNumber("RightSpeed", der_1.getMotorOutputPercent());
-    SmartDashboard.putNumber("Vertical Speed", 
-      driver_controller.getRawAxis(Constants.ID_JOYSTICK_SPEED)-
-      driver_controller.getRawAxis(Constants.ID_JOYSTICK_BRAKE));
-    SmartDashboard.putNumber("Current Rotation", driver_controller.getRawAxis(Constants.ID_JOYSTICK_ROT));
+    SmartDashboard.putNumber("Vertical Speed", speed_monitor);
+    SmartDashboard.putNumber("Current Rotation", rot_monitor);
     SmartDashboard.putBoolean("Motor5 status", izq_1.isAlive());
     SmartDashboard.putBoolean("Motor2 status", izq_2.isAlive());
     SmartDashboard.putBoolean("Motor3 status", der_1.isAlive());
@@ -306,16 +296,10 @@ public class chassis extends SubsystemBase {
 }
 
   public double getRightVelocity(){
-    // double d_distance = r_encoder.getDistance() - last_encoder_R;
-    // double d_time = timer.get() - last_timer;
-    // double velocity = d_time > 0 ? d_distance/d_time : 0;
     return r_encoder.getRate();
   }
 
   public double getLeftVelocity(){
-    // double d_distance = l_encoder.getDistance() - last_encoder_L;
-    // double d_time = timer.get() - last_timer;
-    // double velocity = d_time > 0 ? d_distance/d_time : 0;
     return l_encoder.getRate();
   }
 
@@ -324,9 +308,7 @@ public class chassis extends SubsystemBase {
   }
 
   public void updateOdometry(){
-    last_encoder_L = l_encoder.getDistance();
-    last_encoder_R = r_encoder.getDistance();
-    last_timer = timer.get();
+    speed_monitor = getAverageEncoderSpeed();
     m_odometry.update(gyro.getRotation2d(), l_encoder.getDistance(),r_encoder.getDistance());
   }
 
@@ -370,6 +352,7 @@ public class chassis extends SubsystemBase {
       forwardXSpeed = forwardXSpeed > 0 ? Constants.MAX_SPEED_ms2 : -Constants.MAX_SPEED_ms2;
     }
     double angularVelocity = chassisSpeeds.omegaRadiansPerSecond;
+    rot_monitor = angularVelocity;
     double leftVelocity = forwardXSpeed + (angularVelocity * Constants.kTrackWitdth / 2);
     double rightVelocity = forwardXSpeed - (angularVelocity * Constants.kTrackWitdth / 2);
 
@@ -445,45 +428,45 @@ public class chassis extends SubsystemBase {
 // CHASSIS LAMBDA COMMANDS -----------------------
 
   
-  public Command driveCommand(chassis c_chassis, XboxController controller){ 
+  public Command driveCommand(XboxController controller){ 
         // SmartDashboard.putNumber("brake troubleshooting", playstationBrake);
     
     return Commands.run(
       () -> 
-        c_chassis.arcadeDrive(
+        this.arcadeDrive(
         (controller.getRawAxis(Constants.ID_JOYSTICK_SPEED)- controller.getRawAxis(Constants.ID_JOYSTICK_BRAKE)),
         (Math.abs(controller.getRawAxis(Constants.ID_JOYSTICK_ROT)) > Constants.kDeadBandRot ? controller.getRawAxis(Constants.ID_JOYSTICK_ROT) : 0)), 
-      c_chassis);
+      this);
   }
 
   @Deprecated
-  public Command drivePS4Command(chassis c_chassis, PS4Controller controller){ 
+  public Command drivePS4Command(PS4Controller controller){ 
     return Commands.run(
-      () -> c_chassis.arcadeDrive(
+      () -> this.arcadeDrive(
         0.5*controller.getL2Axis()-0.5*controller.getR2Axis(),
         (controller.getRawAxis(Constants.ID_JOYSTICK_ROT)*kRot)), 
-      c_chassis);
+      this);
   }
 
-  public Command resetGyroCommand(chassis c_chassis){
-    return this.runOnce(() -> c_chassis.gyro.reset());
+  public Command resetGyroCommand(){
+    return this.runOnce(() -> this.gyro.reset());
   }
 
   @Deprecated
-  public Command setOrientationCommand(chassis c_chassis, double theta){
-    return Commands.run(()-> c_chassis.setOrientationAngle(theta), c_chassis);
+  public Command setOrientationCommand(double theta){
+    return Commands.run(()-> this.setOrientationAngle(theta), this);
   }
 
-  public Command resetOdometryCommand(chassis c_chassis){
-    return this.runOnce(()-> c_chassis.resetOdometry());
+  public Command resetOdometryCommand(){
+    return this.runOnce(()-> this.resetOdometry());
   }
 
-  public Command stopCommand(chassis c_Chassis){
-    return this.runOnce(() -> c_Chassis.StopChassis());
+  public Command stopCommand(){
+    return this.runOnce(() -> this.StopChassis());
   }
 
-  public Command clearFaultsCommand(chassis c_chassis){
-    return this.runOnce(() -> c_chassis.clearFaults());
+  public Command clearFaultsCommand(){
+    return this.runOnce(() -> this.clearFaults());
   }
   
 }

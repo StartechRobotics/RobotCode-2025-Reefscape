@@ -30,20 +30,22 @@ import frc.robot.Constants;
 
 public class elevator extends SubsystemBase {
 
-  private final SparkMax master_neoL= new SparkMax(Constants.ID_ELEVATOR_IZQ,MotorType.kBrushless);
-  private final SparkMax follower_neoR = new SparkMax(Constants.ID_ELEVATOR_DER, MotorType.kBrushless);
+  private final SparkMax master_neoL= new SparkMax(Constants.ID_ELEVATOR_DER,MotorType.kBrushless);
+  private final SparkMax follower_neoR = new SparkMax(Constants.ID_ELEVATOR_IZQ, MotorType.kBrushless);
   private final SparkMaxConfig masterConfig = new SparkMaxConfig();
   private final SparkMaxConfig followerConfig = new SparkMaxConfig();
   private final RelativeEncoder masterEncoder= master_neoL.getEncoder();
   private final RelativeEncoder followEncoder= follower_neoR.getEncoder();
-  private final boolean followerInverted = true;
-  public final double distancePerRotation = Constants.kElevDistancePerRotMeters;
+  private final boolean masterInverted = false;
+  private final boolean followerInverted = !masterInverted;
+  public static final double distancePerRotation = Constants.kElevDistancePerRotCM;
   private final PIDController pidController = new PIDController(Constants.kP_elev, Constants.kI_elev, Constants.kD_elev);
   private final ElevatorFeedforward m_feedforward = new ElevatorFeedforward(Constants.kS_elev, Constants.kG_elev, Constants.kV_elev);
 
   public elevator() {
     masterConfig.idleMode(IdleMode.kBrake);
     followerConfig.idleMode(IdleMode.kBrake);
+    masterConfig.inverted(masterInverted);
     followerConfig.follow(master_neoL,followerInverted);
     master_neoL.configure(masterConfig, SparkMax.ResetMode.kResetSafeParameters, SparkMax.PersistMode.kPersistParameters);
     follower_neoR.configure(followerConfig, SparkMax.ResetMode.kResetSafeParameters, SparkMax.PersistMode.kPersistParameters);    
@@ -52,6 +54,8 @@ public class elevator extends SubsystemBase {
   }
   
   // -----------SYSID FOR FEEDFORWARD -------------------------------
+
+  
   private final MutVoltage m_appliedVoltage = Volts.mutable(0);
   private final MutDistance m_distance = Meters.mutable(0);
   private final MutLinearVelocity m_velocity = MetersPerSecond.mutable(0);
@@ -81,10 +85,10 @@ public class elevator extends SubsystemBase {
           // Tell SysId to make generated commands require this subsystem, suffix test state in
           // WPILog with this subsystem's name ("elevator")
           this));
-  public Command sysIdDynamic(SysIdRoutine.Direction direction, elevator elevator) {
+  public Command sysIdDynamic(SysIdRoutine.Direction direction) {
     return m_sysIdRoutine.dynamic(direction);
   }
-  public Command sysIdQuasistatic(SysIdRoutine.Direction direction, elevator elevator) {
+  public Command sysIdQuasistatic(SysIdRoutine.Direction direction) {
     return m_sysIdRoutine.quasistatic(direction);
   }
 
@@ -93,6 +97,8 @@ public class elevator extends SubsystemBase {
   public void updateOutputLabels(){
     SmartDashboard.putNumber("Left Elev Encoder", masterEncoder.getPosition());
     SmartDashboard.putNumber("Right Elev Encoder", followEncoder.getPosition());
+    SmartDashboard.putNumber("Left Temp", getLeftTemp());
+    SmartDashboard.putNumber("Right Temp", getRightTemp());
   }
 
   public void resetEncoders(){
@@ -109,6 +115,8 @@ public class elevator extends SubsystemBase {
       drive_speed = drive_speed > 0 ? 1 : -1;
     }
     double motor_speed = drive_speed * Constants.MAX_ELEV_SPEED_PERCENT;
+    motor_speed = stopAtLimit(motor_speed);
+
     master_neoL.set(motor_speed);
   }
 
@@ -155,14 +163,43 @@ public class elevator extends SubsystemBase {
   }
 
   public double getDistanceMeters(){
+    double distance = this.masterEncoder.getPosition() * distancePerRotation /100;
+    return distance;
+  }
+  
+  public double getDistanceCentimeters(){
     double distance = this.masterEncoder.getPosition() * distancePerRotation;
     return distance;
   }
 
   public double getRateMetersPerSecond(RelativeEncoder encoder){
     double rate_RotPerSecond = encoder.getVelocity()/60;
-    double rate_MetersPerSecond = rate_RotPerSecond * distancePerRotation;
+    double rate_MetersPerSecond = rate_RotPerSecond * distancePerRotation/100;
     return rate_MetersPerSecond;
+  }
+
+  public double getRateCentimetersPerSecond(RelativeEncoder encoder){
+    double rate_RotPerSecond = encoder.getVelocity()/60;
+    double rate_CentimetersPerSecond = rate_RotPerSecond * distancePerRotation;
+    return rate_CentimetersPerSecond;
+  }
+
+  // --------- CONTROL METHODS -----------
+
+  public double getRightTemp(){
+    return follower_neoR.getMotorTemperature();
+  }
+
+  public double getLeftTemp(){
+    return master_neoL.getMotorTemperature();
+  }
+
+  private double stopAtLimit(double input){
+    double output = input;
+    if (this.masterEncoder.getPosition() <= 0 && input < 0){
+      output = 0; 
+    }
+    return output;
   }
 
   // -------------PERIODIC-----------------
@@ -174,28 +211,30 @@ public class elevator extends SubsystemBase {
 
   // ------------ LAMBDA COMMANDS ---------------
 
-  public Command driveCommand (elevator c_elevator, XboxController controller){
+  public Command driveCommand (XboxController controller){
     return Commands.run(
-      ()->c_elevator.drive(
+      ()->this.drive(
         controller.getRawAxis(XboxController.Axis.kRightTrigger.value)
         -controller.getRawAxis(XboxController.Axis.kLeftTrigger.value))
-      , c_elevator);
+      , this);
   }
 
-  public Command driveToTargetCommand(double position, elevator c_elevator){
+  public Command driveToTargetCommand(double position){
     return Commands.run(
       ()->
-        c_elevator.pidTarget(position), 
-        c_elevator)
-      .until(() -> c_elevator.getDistanceMeters() == position)
+        this.pidTarget(position), 
+        this)
+      .until(() -> this.getDistanceMeters() == position)
       .andThen(
       Commands.runOnce(
         ()->
-        c_elevator.dryStop()
-      , c_elevator));
+        this.dryStop()
+      , this));
   }
 
-  public Command dryStopCommand(elevator c_elevator ){
-    return Commands.runOnce(()-> c_elevator.dryStop());
+  public Command dryStopCommand(){
+    return Commands.runOnce(()-> this.dryStop());
   }
+
+  
 }
