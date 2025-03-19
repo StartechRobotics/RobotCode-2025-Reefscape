@@ -6,10 +6,10 @@ import edu.wpi.first.math.util.Units;
 /** Add your docs here. */
 public class Constants {
     // CHASSIS CONSTANTS
-    public static final  int ID_IZQ_1 = 5;
-    public static final int ID_IZQ_2 = 2;
-    public static final int ID_DER_1 = 3;
-    public static final int ID_DER_2 = 4;
+    public static final  int ID_IZQ_1 = 3;
+    public static final int ID_IZQ_2 = 4;
+    public static final int ID_DER_1 = 5;
+    public static final int ID_DER_2 = 2;
     // ORIGINAL ENCODERS
     public static final int ID_ENC_1A = 9;
     public static final int ID_ENC_1B = 8;
@@ -43,7 +43,7 @@ public class Constants {
     public static double kPIDThreshold = 0.5;
     
     // Grabber Constants
-    public static final int ID_GRABBER = 0;
+    public static final int ID_GRABBER = 19;
     public static final double kGrabVolts = 0;
     public static final double kDropVolts = 0;
     
@@ -66,8 +66,11 @@ public class Constants {
     public static final int ID_SHOOTER_FRONT = 7;
     public static final double MAX_SHOOTER_VOLTS = 12*0.85;
     public static final int kShooterSensorThreshold = 0;
-
+    public static final double kIntakeCurrentThreshold = 40;
+    public static final int kProximityThreshold = 100;
+    
     // Hopper Constants
     public static final int ID_PCM = 0;
     public static final int ID_HOPPER_SOLENOID = 0;
+    
 }

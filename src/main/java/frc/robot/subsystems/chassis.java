@@ -28,6 +28,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
+
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -36,6 +37,8 @@ import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPLTVController;
 
 public class chassis extends SubsystemBase {
+
+    
 
     // class vars actuators-related
     private final WPI_TalonSRX izq_1 = new WPI_TalonSRX(Constants.ID_IZQ_1);
@@ -348,7 +351,7 @@ public class chassis extends SubsystemBase {
 
   public void drive(ChassisSpeeds chassisSpeeds){
     double forwardXSpeed = chassisSpeeds.vxMetersPerSecond;
-    if(Math.abs(forwardXSpeed)>Constants.MAX_SPEED_ms2){
+    if (Math.abs(forwardXSpeed) > Constants.MAX_SPEED_ms2) {
       forwardXSpeed = forwardXSpeed > 0 ? Constants.MAX_SPEED_ms2 : -Constants.MAX_SPEED_ms2;
     }
     double angularVelocity = chassisSpeeds.omegaRadiansPerSecond;
@@ -369,8 +372,8 @@ public class chassis extends SubsystemBase {
 
   public void arcadeDrive(double speed, double rot){
     // deadbands
-    rot = Math.abs(rot)>=0.001 ? rot : 0;
-    speed = Math.abs(speed) >=0.001 ? speed :0;
+    rot = Math.abs(rot) >= 0.001 ? rot : 0;
+    speed = Math.abs(speed) >= 0.001 ? speed :0;
     double forwardSpeed = speed*Constants.MAX_SPEED_ms2;
     double rotationSpeed = rot*Constants.MAX_ROTATION_SPEED_RAD_S;
     ChassisSpeeds chassisSpeeds = new ChassisSpeeds(
@@ -449,7 +452,7 @@ public class chassis extends SubsystemBase {
   }
 
   public Command resetGyroCommand(){
-    return this.runOnce(() -> this.gyro.reset());
+    return this.runOnce(this.gyro::reset);
   }
 
   @Deprecated
@@ -458,15 +461,15 @@ public class chassis extends SubsystemBase {
   }
 
   public Command resetOdometryCommand(){
-    return this.runOnce(()-> this.resetOdometry());
+    return this.runOnce(this::resetOdometry).ignoringDisable(true);
   }
 
   public Command stopCommand(){
-    return this.runOnce(() -> this.StopChassis());
+    return this.runOnce(this::StopChassis);
   }
 
   public Command clearFaultsCommand(){
-    return this.runOnce(() -> this.clearFaults());
+    return this.runOnce(this::clearFaults);
   }
   
 }
