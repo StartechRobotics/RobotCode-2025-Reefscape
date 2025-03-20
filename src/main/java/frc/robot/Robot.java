@@ -1,5 +1,7 @@
 package frc.robot;
 
+import java.io.OutputStream;
+
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
 import org.opencv.core.Scalar;
@@ -10,6 +12,8 @@ import edu.wpi.first.cscore.CvSink;
 import edu.wpi.first.cscore.CvSource;
 import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
@@ -33,8 +37,9 @@ public class Robot extends TimedRobot {
 
         CvSink cvSink = CameraServer.getVideo();
         CvSource outputStream = CameraServer.putVideo("Processed", 640, 480);
-
         Mat frame = new Mat();
+        Shuffleboard.getTab("Vision").add("Processed", outputStream);
+        
 
         while (!Thread.interrupted()) {
           if (cvSink.grabFrame(frame) == 0) {
@@ -55,6 +60,8 @@ public class Robot extends TimedRobot {
 
       visionThread.setDaemon(true);
       visionThread.start();
+      
+      
     } catch (Exception e) {
       System.out.println("Error in vision thread");
     }

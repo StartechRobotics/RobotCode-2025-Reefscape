@@ -30,6 +30,9 @@ public class RobotContainer {
   public boolean mech_controllerLeftAxToBoolLessThan() {
     return mech_controller.getRawAxis(XboxController.Axis.kLeftY.value) < -0.5;
   }
+  public boolean mech_controllerRightAxToBool() {
+    return Math.abs(mech_controller.getRawAxis(XboxController.Axis.kRightY.value)) > 0.5;
+  }
   public boolean isL1() {
     return m_elevator.position == 1;
   }
@@ -72,6 +75,7 @@ public class RobotContainer {
 
   private final Trigger coralOutTrigger = new JoystickButton(mech_controller, XboxController.Button.kLeftBumper.value);
   private final Trigger coralInTrigger = new JoystickButton(mech_controller, XboxController.Button.kStart.value);
+  private final Trigger shooterBackwardTrigger = new Trigger(this::mech_controllerRightAxToBool);
   private final Trigger shiftTrigger = new JoystickButton(mech_controller, XboxController.Button.kStart.value);
 
   // Elevator Triggers
@@ -125,7 +129,8 @@ public class RobotContainer {
     l2Trigger.and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL2Position));
     l3Trigger.and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL3Position));
     l4Trigger.and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL4Position));
-    
+
+    shooterBackwardTrigger.onTrue(m_shooter.takeBackCommand()).onFalse(m_shooter.stopShooterCommand());
 
     intakeTrigger.onTrue(m_shooter.rollIntakeCommand());
     intakeTrigger
@@ -146,7 +151,7 @@ public class RobotContainer {
 
     grabTrigger.onTrue(m_grabber.grabCommand()).onFalse(m_grabber.stopCommand());
     dropTrigger.onTrue(m_grabber.dropCommand()).onFalse(m_grabber.stopCommand());
-  }
+  } 
 
   public void RobotCharacterizations() {
     // SysID TEST COMMAND BINDINGS - TEMP DISABLED
@@ -158,6 +163,7 @@ public class RobotContainer {
   }
 
   public void StatesMachine() {
+    hasCoral.onTrue(m_shooter.stopShooterCommand());
   }
 
   public Command getAutonomousCommand() {

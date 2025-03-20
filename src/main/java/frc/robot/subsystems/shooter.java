@@ -76,7 +76,7 @@ public class shooter extends SubsystemBase {
 
   public void rollIntake() {
     // m_back.setVoltage(intakeVolts);
-    m_back.set(0.2);
+    m_back.set(checkCoralGrabbing()?0.1:0.2);
   }
 
   public void slowIntake(){
@@ -88,6 +88,10 @@ public class shooter extends SubsystemBase {
     // m_front.setVoltage(outVolts);
     m_back.set(0.2);
     m_front.set(0.2);
+  }
+
+  public void takeBack(){
+    m_back.set(-0.1);
   }
 
   public void manualDrive(double frontPercent, double backPercent) {
@@ -103,15 +107,14 @@ public class shooter extends SubsystemBase {
   }
 
   private boolean checkCoralGrabbing(){
-    grabbingCoral = frontEncoder.getVelocity()>0;
-    return grabbingCoral;
+    return frontEncoder.getPosition()*18/24 > 0;
   }
   
   private boolean checkCoralFront(){
-    if(!coralIsFront&&checkCoralGrabbing()&&!checkCoralInBetween()){
+    if(!coralIsFront && checkCoralGrabbing()&& !checkCoralInBetween()){
       coralIsFront = true;
-      grabbingCoral= false;
-      coralInBetween = false;
+      frontEncoder.setPosition(0);
+      
     }
     return coralIsFront;
   }
@@ -146,12 +149,8 @@ public class shooter extends SubsystemBase {
     return Commands.runOnce(this::rollIntake);
   }
 
-  public SequentialCommandGroup intakeTimeCommand(){
-    return new SequentialCommandGroup(
-      Commands.runOnce(this::rollIntake),
-      new WaitCommand(0.2),
-      Commands.runOnce(this::stopMotors)
-    );
+  public Command takeBackCommand(){
+    return Commands.runOnce(this::takeBack);
   }
 
   public Command shootCommand(){
