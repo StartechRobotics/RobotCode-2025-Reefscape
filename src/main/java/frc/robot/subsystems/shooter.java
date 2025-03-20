@@ -2,9 +2,10 @@ package frc.robot.subsystems;
 
 import com.revrobotics.spark.SparkMax;
 
-import java.util.function.BooleanSupplier;
+import java.nio.file.FileSystemAlreadyExistsException;
 
 import com.revrobotics.ColorSensorV3;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -27,9 +28,12 @@ public class shooter extends SubsystemBase {
   private static final double kCurrentThreshold = Constants.kIntakeCurrentThreshold;
   private final SparkMax m_front = new SparkMax(Constants.ID_SHOOTER_FRONT, MotorType.kBrushless);
   private final SparkMax m_back = new SparkMax(Constants.ID_SHOOTER_BACK, MotorType.kBrushless);
+  private final RelativeEncoder frontEncoder = m_front.getEncoder();
   private SparkMaxConfig backConfig = new SparkMaxConfig();
   private SparkMaxConfig frontConfig = new SparkMaxConfig();
   private LinearFilter lowpassFilter = LinearFilter.singlePoleIIR(0.02, 0.02);
+  public boolean grabbingCoral = false;
+  public boolean coralInBetween;
   public boolean coralIsFront;
   
   // private static final MutVoltage intakeVolts = new MutVoltage(8.5, 0, Volts);
@@ -37,6 +41,7 @@ public class shooter extends SubsystemBase {
   public ColorSensorV3 colorSensor;
     
     public shooter() {
+      coralIsFront  = true;
       backConfig.idleMode(IdleMode.kBrake);
       frontConfig.idleMode(IdleMode.kBrake);
       frontConfig.inverted(true);
@@ -52,8 +57,15 @@ public class shooter extends SubsystemBase {
   
   @Override
   public void periodic() {
-    SmartDashboard.getNumber("Current Value m_back", m_back.getOutputCurrent());
-    SmartDashboard.getNumber("Current Lowpassed Value m_back", lowpassFilter.calculate(m_back.getOutputCurrent()));
+    checkCoralFront();
+    dasboardLabels();
+  }
+
+  public void dasboardLabels(){
+    SmartDashboard.putNumber("Current Value m_back", m_back.getOutputCurrent());
+    SmartDashboard.putNumber("Current Lowpassed Value m_back", lowpassFilter.calculate(m_back.getOutputCurrent()));
+    SmartDashboard.putBoolean("Has Coral", coralIsFront);
+    SmartDashboard.putBoolean("CoralInBetween", coralInBetween);
   }
   
   // -------- Movement methods ----------
@@ -64,7 +76,7 @@ public class shooter extends SubsystemBase {
 
   public void rollIntake() {
     // m_back.setVoltage(intakeVolts);
-    m_back.set(0.65);
+    m_back.set(0.2);
   }
 
   public void slowIntake(){
@@ -74,8 +86,8 @@ public class shooter extends SubsystemBase {
   public void out() {
     // m_back.setVoltage(outVolts);
     // m_front.setVoltage(outVolts);
-    m_back.set(0.5);
-    m_front.set(0.5);
+    m_back.set(0.2);
+    m_front.set(0.2);
   }
 
   public void manualDrive(double frontPercent, double backPercent) {
@@ -83,14 +95,33 @@ public class shooter extends SubsystemBase {
     m_front.set(frontPercent);
   }
 
-  // --------- Other Methods ----------
+  // --------- Control Methods ----------
 
-  public boolean checkCoralFront() {
-    return coralIsFront;
+  public boolean checkCoralInBetween() {
+    coralInBetween = colorSensor.getProximity() < kProximityThreshold;
+    return coralInBetween;
   }
 
   private boolean checkCoralGrabbing(){
-    return lowpassFilter.calculate(m_back.getOutputCurrent()) > kCurrentThreshold;
+    grabbingCoral = frontEncoder.getVelocity()>0;
+    return grabbingCoral;
+  }
+  
+  private boolean checkCoralFront(){
+    if(!coralIsFront&&checkCoralGrabbing()&&!checkCoralInBetween()){
+      coralIsFront = true;
+      grabbingCoral= false;
+      coralInBetween = false;
+    }
+    return coralIsFront;
+  }
+
+  public boolean hasCoral(){
+    return coralIsFront;
+  }
+
+  private void resetCoralStatus(){
+    coralIsFront = false;
   }
 
   // -------- Getter Methods-----------
@@ -124,6 +155,10 @@ public class shooter extends SubsystemBase {
   }
 
   public Command shootCommand(){
-    return Commands.runOnce(this::out);
+    return new SequentialCommandGroup(
+      Commands.runOnce(this::out), 
+      new WaitCommand(0.5), 
+      Commands.runOnce(this::stopMotors), 
+      Commands.runOnce(this::resetCoralStatus));
   }
 }

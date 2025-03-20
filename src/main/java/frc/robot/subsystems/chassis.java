@@ -3,6 +3,7 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
@@ -38,8 +39,6 @@ import com.pathplanner.lib.controllers.PPLTVController;
 
 public class chassis extends SubsystemBase {
 
-    
-
     // class vars actuators-related
     private final WPI_TalonSRX izq_1 = new WPI_TalonSRX(Constants.ID_IZQ_1);
     private final WPI_TalonSRX izq_2 = new WPI_TalonSRX(Constants.ID_IZQ_2);
@@ -54,9 +53,21 @@ public class chassis extends SubsystemBase {
     private final DifferentialDrive differentialDrive = new DifferentialDrive(group_l,group_r);
     private final DifferentialDriveKinematics kinematics = Constants.kDriveKinematics;
     private DifferentialDriveOdometry m_odometry = null;
+    private final SimpleMotorFeedforward lFeedforward = new SimpleMotorFeedforward(
+      Constants.kS_chassisLeft,
+      Constants.kV_chassisLeft,
+      Constants.kA_chassisLeft
+      );
+    private final SimpleMotorFeedforward rFeedforward = new SimpleMotorFeedforward(
+      Constants.kS_chassisRight,
+
+      Constants.kV_chassisRight,
+      Constants.kA_chassisRight
+      );
     private Encoder l_encoder = null;
     private Encoder r_encoder = null;
     private final ADXRS450_Gyro gyro = new ADXRS450_Gyro(); 
+    // private final 
     public static final double kRot = Constants.kRot;
     public double speed_monitor;
     public double rot_monitor;
@@ -243,8 +254,8 @@ public class chassis extends SubsystemBase {
 
   public void updateOutputLabels(){
     SmartDashboard.putNumber("LeftSpeed", izq_1.getMotorOutputPercent());
-    SmartDashboard.putNumber("Left speed M/s", l_encoder.getRate());
-    SmartDashboard.putNumber("Right speed M/s", r_encoder.getRate());
+    SmartDashboard.putNumber("Left speed M/s", getLeftVelocity());
+    SmartDashboard.putNumber("Right speed M/s", getRightVelocity());
     SmartDashboard.putNumber("RightSpeed", der_1.getMotorOutputPercent());
     SmartDashboard.putNumber("Vertical Speed", speed_monitor);
     SmartDashboard.putNumber("Current Rotation", rot_monitor);
@@ -296,7 +307,7 @@ public class chassis extends SubsystemBase {
 
   public void resetPose(Pose2d pose) {
     m_odometry.resetPosition(gyro.getRotation2d(), l_encoder.getDistance(), r_encoder.getDistance(), pose);
-}
+  }
 
   public double getRightVelocity(){
     return r_encoder.getRate();
@@ -338,14 +349,16 @@ public class chassis extends SubsystemBase {
   // ----------MOVEMENT METHODS ------------------
 
   public void setMotorVolts(double l_volts, double r_volts){
+    // group_l.setVoltage(lFeedforward.calculate(l_volts));
+    // group_r.setVoltage(rFeedforward.calculate(r_volts));
     group_l.setVoltage(l_volts);
     group_r.setVoltage(r_volts);
     differentialDrive.feed();
   }
 
   public void setMotorVolts(Voltage l_volts, Voltage r_volts){
-    group_l.setVoltage(l_volts);
-    group_r.setVoltage(r_volts);
+    group_l.setVoltage(lFeedforward.calculate(l_volts.magnitude()));
+    group_r.setVoltage(rFeedforward.calculate(r_volts.magnitude()));
     differentialDrive.feed();
   }
 
@@ -362,18 +375,18 @@ public class chassis extends SubsystemBase {
     double leftVolts = Constants.MAX_MOTOR_VOLTS*(leftVelocity/Constants.MAX_SPEED_ms2);
     double rightVolts = Constants.MAX_MOTOR_VOLTS*(rightVelocity/Constants.MAX_SPEED_ms2);
     setMotorVolts(leftVolts, rightVolts);
-    differentialDrive.feed();
-    // differentialDrive.feedWatchdog();
   }
 
   public void driveRobotRelative(ChassisSpeeds chassisSpeeds){
     drive(chassisSpeeds);
   }
 
-  public void arcadeDrive(double speed, double rot){
+  public void arcadeDrive(double speed, double rot, boolean slowMode){
     // deadbands
     rot = Math.abs(rot) >= 0.001 ? rot : 0;
     speed = Math.abs(speed) >= 0.001 ? speed :0;
+    speed = slowMode ? speed*Constants.kSlowMode : speed;
+    rot = slowMode ? rot*(Constants.kSlowMode*2) : rot;
     double forwardSpeed = speed*Constants.MAX_SPEED_ms2;
     double rotationSpeed = rot*Constants.MAX_ROTATION_SPEED_RAD_S;
     ChassisSpeeds chassisSpeeds = new ChassisSpeeds(
@@ -391,7 +404,7 @@ public class chassis extends SubsystemBase {
     return true;
   }
 
-  @Deprecated
+  @Deprecated(forRemoval = true)
   public void setOrientationAngle(double target){
     double current_theta = gyro.getAngle();
     double error = target - current_theta;
@@ -416,7 +429,7 @@ public class chassis extends SubsystemBase {
       turn = P + I + D;
       turn = Math.min(Math.max(turn, -0.7), 0.7);
   
-      arcadeDrive(0, turn);
+      // arcadeDrive(0, turn);
 
       previous_error = error;
   
@@ -431,23 +444,15 @@ public class chassis extends SubsystemBase {
 // CHASSIS LAMBDA COMMANDS -----------------------
 
   
-  public Command driveCommand(XboxController controller){ 
-        // SmartDashboard.putNumber("brake troubleshooting", playstationBrake);
+  public Command driveCommand(XboxController controller, double elevatorSafety){ 
     
     return Commands.run(
       () -> 
         this.arcadeDrive(
-        (controller.getRawAxis(Constants.ID_JOYSTICK_SPEED)- controller.getRawAxis(Constants.ID_JOYSTICK_BRAKE)),
-        (Math.abs(controller.getRawAxis(Constants.ID_JOYSTICK_ROT)) > Constants.kDeadBandRot ? controller.getRawAxis(Constants.ID_JOYSTICK_ROT) : 0)), 
-      this);
-  }
-
-  @Deprecated
-  public Command drivePS4Command(PS4Controller controller){ 
-    return Commands.run(
-      () -> this.arcadeDrive(
-        0.5*controller.getL2Axis()-0.5*controller.getR2Axis(),
-        (controller.getRawAxis(Constants.ID_JOYSTICK_ROT)*kRot)), 
+        elevatorSafety*
+        (controller.getRawAxis(XboxController.Axis.kLeftTrigger.value)- controller.getRawAxis(XboxController.Axis.kRightTrigger.value)),
+        (Math.abs(controller.getRawAxis(Constants.ID_JOYSTICK_ROT)) > Constants.kDeadBandRot ? controller.getRawAxis(Constants.ID_JOYSTICK_ROT) : 0),
+        controller.getLeftBumper()), 
       this);
   }
 

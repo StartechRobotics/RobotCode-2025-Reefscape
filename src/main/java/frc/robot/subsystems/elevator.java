@@ -13,7 +13,7 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.units.measure.MutDistance;
@@ -44,11 +44,17 @@ public class elevator extends SubsystemBase {
     Constants.kP_elev, 
     Constants.kI_elev,
     Constants.kD_elev);
-  private final ElevatorFeedforward m_feedforward = new ElevatorFeedforward(Constants.kS_elev, Constants.kG_elev,
-      Constants.kV_elev);
+  private final ElevatorFeedforward m_feedforward = new ElevatorFeedforward(
+    Constants.kS_elev, 
+    Constants.kG_elev,
+    Constants.kV_elev,
+    Constants.kA_elev);
+  public int position = 1;
+  public double displacement=0;
+
 
   public elevator() {
-    
+    masterConfig.idleMode(IdleMode.kBrake);
     followerConfig.idleMode(IdleMode.kBrake);
     masterConfig.inverted(masterInverted);
     followerConfig.follow(master_neoL, followerInverted);
@@ -80,13 +86,20 @@ public class elevator extends SubsystemBase {
           log -> {
             // Record a frame for the left motors. Since these share an encoder, we consider
             // the entire group to be one motor.
-            log.motor("elevator")
+            log.motor("elevator left Master")
                 .voltage(
                     m_appliedVoltage.mut_replace(
                         master_neoL.get() * RobotController.getBatteryVoltage(), Volts))
-                .linearPosition(m_distance.mut_replace(getDistanceMeters(), Meters))
+                .linearPosition(m_distance.mut_replace(getDistanceMetersMaster(), Meters))
                 .linearVelocity(
                     m_velocity.mut_replace(getRateMetersPerSecond(masterEncoder), MetersPerSecond));
+            log.motor("elevator right Follower")
+                .voltage(
+                    m_appliedVoltage.mut_replace(
+                        follower_neoR.get() * RobotController.getBatteryVoltage(), Volts))
+                .linearPosition(m_distance.mut_replace(getDistanceMetersFollower(), Meters))
+                .linearVelocity(
+                    m_velocity.mut_replace(getRateMetersPerSecond(followEncoder), MetersPerSecond));
           },
           // Tell SysId to make generated commands require this subsystem, suffix test
           // state in
@@ -106,8 +119,11 @@ public class elevator extends SubsystemBase {
   public void updateOutputLabels() {
     SmartDashboard.putNumber("Left Elev Encoder", masterEncoder.getPosition());
     SmartDashboard.putNumber("Right Elev Encoder", followEncoder.getPosition());
+    SmartDashboard.putNumber("Height", displacement);
     SmartDashboard.putNumber("Left Temp", getLeftTemp());
     SmartDashboard.putNumber("Right Temp", getRightTemp());
+    SmartDashboard.putNumber("L Position", position);
+    SmartDashboard.putData(null);
   }
 
   public void resetEncoders() {
@@ -124,20 +140,22 @@ public class elevator extends SubsystemBase {
       drive_speed = drive_speed > 0 ? 1 : -1;
     }
     double motor_speed = drive_speed * Constants.MAX_ELEV_SPEED_PERCENT;
-    motor_speed = stopAtLimit(motor_speed);
-
+    motor_speed = stopAtLimits(motor_speed);
     master_neoL.set(motor_speed);
   }
 
   public void drive(Voltage drive_volts) {
     MutVoltage motor_volts = drive_volts.mutableCopy();
     double voltsMagnitude = motor_volts.baseUnitMagnitude();
+
     if (Math.abs(voltsMagnitude) > Constants.MAX_ELEV_VOLTS) {
       voltsMagnitude = voltsMagnitude > 0 ? Constants.MAX_ELEV_VOLTS : -1 * Constants.MAX_ELEV_VOLTS;
     }
-    if (voltsMagnitude == 0) {
-      master_neoL.stopMotor();
-    } else {
+
+    voltsMagnitude = stopAtLimits(voltsMagnitude);
+    if(voltsMagnitude == 0){
+      dryStop();
+    }else{
       motor_volts.mut_setMagnitude(voltsMagnitude);
       master_neoL.setVoltage(motor_volts);
     }
@@ -152,11 +170,12 @@ public class elevator extends SubsystemBase {
   }
 
   public void pidTarget(double setpointM) {
-    double measurement = getDistanceMeters();
+    double measurement = masterEncoder.getPosition();
     double pidOutput = pidController.calculate(measurement, setpointM);
     // feedforward counteracts gravity and avoids subsystem not staying still
-    double ffOutput = m_feedforward.calculate(0);
-    SmartDashboard.putNumber("feedforward", ffOutput);
+    double ffOutput = 0;
+    // double ffOutput = m_feedforward.calculate(0);
+    // SmartDashboard.putNumber("feedforward", ffOutput);
     double output = pidOutput + ffOutput;
     drive(output);
   }
@@ -165,20 +184,30 @@ public class elevator extends SubsystemBase {
     double measurement = masterEncoder.getPosition();
     double pidOutput = pidController.calculate(measurement, setpoint);
     // feedforward counteracts gravity and avoids subsystem not staying still
+    SmartDashboard.putNumber("Error", setpoint-measurement);
+    SmartDashboard.putNumber("PID Out", pidOutput);
     double ffOutput = m_feedforward.calculate(0);
     SmartDashboard.putNumber("feedforward", ffOutput);
     double output = pidOutput + ffOutput;
     driveVoltsPercent(output);
   }
 
-  public double getDistanceMeters() {
+  public double getDistanceMetersMaster() {
     double distance = this.masterEncoder.getPosition() * distancePerRotation / 100;
     return distance;
   }
 
-  public double getDistanceCentimeters() {
-    double distance = this.masterEncoder.getPosition() * distancePerRotation;
+  public double getDistanceMetersFollower() {
+    double distance = this.followEncoder.getPosition() * distancePerRotation / 100;
     return distance;
+  }
+
+  public double getDistanceMeters(){
+    return getDistanceMetersMaster();
+  }
+
+  public double getDistanceCentimeters() {
+    return masterEncoder.getPosition() * distancePerRotation;
   }
 
   public double getRateMetersPerSecond(RelativeEncoder encoder) {
@@ -203,9 +232,12 @@ public class elevator extends SubsystemBase {
     return master_neoL.getMotorTemperature();
   }
 
-  private double stopAtLimit(double input) {
+  private double stopAtLimits(double input) {
     double output = input;
     if (this.masterEncoder.getPosition() <= 0 && input < 0) {
+      output = 0;
+    }
+    if(this.masterEncoder.getPosition() >= 187 && input > 0){
       output = 0;
     }
     return output;
@@ -216,6 +248,7 @@ public class elevator extends SubsystemBase {
   @Override
   public void periodic() {
     updateOutputLabels();
+    displacement=masterEncoder.getPosition()*distancePerRotation;
   }
 
   // ------------ LAMBDA COMMANDS ---------------
@@ -223,8 +256,8 @@ public class elevator extends SubsystemBase {
   public Command driveCommand(XboxController controller) {
     return Commands.run(
         () -> this.drive(
-            controller.getRawAxis(XboxController.Axis.kRightTrigger.value)
-                - controller.getRawAxis(XboxController.Axis.kLeftTrigger.value)),
+            0.5*(controller.getRawAxis(XboxController.Axis.kRightTrigger.value)
+                - controller.getRawAxis(XboxController.Axis.kLeftTrigger.value))),
         this);
   }
 
@@ -232,10 +265,19 @@ public class elevator extends SubsystemBase {
     return Commands.run(
         () -> this.pidTarget(position),
         this)
-        .until(() -> this.getDistanceMeters() == position)
+        .beforeStarting(
+          ()-> {
+            if(position == Constants.kL1Position)this.position=1;
+            else if(position == Constants.kL2Position)this.position=2;
+            else if(position == Constants.kL3Position)this.position=3;
+            else if(position == Constants.kL4Position)this.position=4;
+          })
+        .until(
+          () -> masterEncoder.getPosition() == position)
         .andThen(
-            Commands.runOnce(
-                () -> this.dryStop(), this));
+          Commands.runOnce(
+            () -> this.dryStop()
+        ,this));
   }
 
   public Command dryStopCommand() {

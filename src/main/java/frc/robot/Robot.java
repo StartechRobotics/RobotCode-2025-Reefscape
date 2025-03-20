@@ -1,27 +1,65 @@
 package frc.robot;
 
+import org.opencv.core.Mat;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.imgproc.Imgproc;
+
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.CvSink;
+import edu.wpi.first.cscore.CvSource;
+import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
   private final RobotContainer m_robotContainer;
-  private final String defaultDriveController = "XboxDrive";
-  private String controller_type_selected;
-  private final SendableChooser<String> m_driveControllerChooser = new SendableChooser<>();
+
+  private Thread visionThread;
 
   public Robot() {
     m_robotContainer = new RobotContainer();
-    m_driveControllerChooser.setDefaultOption("Xbox controller", defaultDriveController);
   }
 
   @Override
   public void robotInit(){
-    SmartDashboard.putData(m_driveControllerChooser);
-  }
+    try {
+      visionThread = new Thread(() -> {
+        // Start the camera
+        UsbCamera camera = CameraServer.startAutomaticCapture();
+        camera.setResolution(640, 480);
+
+        CvSink cvSink = CameraServer.getVideo();
+        CvSource outputStream = CameraServer.putVideo("Processed", 640, 480);
+
+        Mat frame = new Mat();
+
+        while (!Thread.interrupted()) {
+          if (cvSink.grabFrame(frame) == 0) {
+            outputStream.notifyError(cvSink.getError());
+            continue;
+          }
+
+          // Draw two vertical lines
+          int x1 = frame.width() / 3; // First line at 1/3 of the width
+          int x2 = 2 * frame.width() / 3; // Second line at 2/3 of the width
+
+          Imgproc.line(frame, new Point(x1, 0), new Point(x1, frame.height()), new Scalar(0, 255, 0), 2);
+          Imgproc.line(frame, new Point(x2, 0), new Point(x2, frame.height()), new Scalar(0, 255, 0), 2);
+
+          outputStream.putFrame(frame);
+        }
+      });
+
+      visionThread.setDaemon(true);
+      visionThread.start();
+    } catch (Exception e) {
+      System.out.println("Error in vision thread");
+    }
+}
+  
 
   @Override
   public void robotPeriodic() {
@@ -56,14 +94,7 @@ public class Robot extends TimedRobot {
   public void teleopInit() {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
-    }
-    controller_type_selected = m_driveControllerChooser.getSelected();
-    switch (controller_type_selected) {
-      default:
-        m_robotContainer.m_chassis.setDefaultCommand(m_robotContainer.m_chassis.driveCommand(m_robotContainer.drive_controller));
-      break;
-    }
-      
+    }      
   }
 
   @Override
