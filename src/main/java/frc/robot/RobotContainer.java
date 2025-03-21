@@ -108,6 +108,9 @@ public class RobotContainer {
 
     autoChooser = AutoBuilder.buildAutoChooser("auto 1");
     autoChooser.setDefaultOption("Avanzar Short (Default)", new PathPlannerAuto("avanzar short"));
+    autoChooser.addOption("Lado del Barge", new PathPlannerAuto("barge1"));
+    autoChooser.addOption("Lado del Processor", new PathPlannerAuto("processor1"));
+    autoChooser.addOption("Reef Centro", new PathPlannerAuto("reef1"));
     SmartDashboard.putData("AutoChooser",autoChooser);
 
     SmartDashboard.putData("Reset Gyro", m_chassis.resetGyroCommand());
