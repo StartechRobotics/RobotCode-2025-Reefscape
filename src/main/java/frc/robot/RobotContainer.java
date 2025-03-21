@@ -107,9 +107,7 @@ public class RobotContainer {
     defaultCommands();
 
     autoChooser = AutoBuilder.buildAutoChooser("auto 1");
-    autoChooser.setDefaultOption("test auto (Default Momentan)", new PathPlannerAuto("test auto"));
-    autoChooser.addOption("auto 0", new PathPlannerAuto("auto 0"));
-    autoChooser.addOption("auto 1", new PathPlannerAuto("auto 1"));
+    autoChooser.setDefaultOption("Avanzar Short (Default)", new PathPlannerAuto("avanzar short"));
     SmartDashboard.putData("AutoChooser",autoChooser);
 
     SmartDashboard.putData("Reset Gyro", m_chassis.resetGyroCommand());
@@ -160,11 +158,11 @@ public class RobotContainer {
 
   public void RobotCharacterizations() {
     // SysID TEST COMMAND BINDINGS - TEMP DISABLED
-    // dynamfwdTrigger.onTrue(m_elevator.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    // quasifwdTrigger.onTrue(m_elevator.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    // quasibwdTrigger.onTrue(m_elevator.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    // dynambwdTrigger.onTrue(m_elevator.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-    // stopTestTrigger.onTrue(m_elevator.dryStopCommand());
+    dynamfwdTrigger.onTrue(m_chassis.sysIdDynamic(SysIdRoutine.Direction.kForward));
+    quasifwdTrigger.onTrue(m_chassis.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+    quasibwdTrigger.onTrue(m_chassis.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+    dynambwdTrigger.onTrue(m_chassis.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+    stopTestTrigger.onTrue(m_chassis.stopCommand());
   }
 
   public void StatesMachine() {
@@ -172,8 +170,8 @@ public class RobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    // Command autoCommand = autoChooser.getSelected();
-    Command autoCommand = null;
+    Command autoCommand = autoChooser.getSelected();
+    // Command autoCommand = null;
     return autoCommand != null ? autoCommand : new WaitCommand(0); // Evita NullPointerException
   }
 

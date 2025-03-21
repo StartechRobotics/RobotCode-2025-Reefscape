@@ -116,8 +116,9 @@ public class shooter extends SubsystemBase {
   private boolean checkCoralFront(){
     if(!coralIsFront && checkCoralGrabbing()&& !checkCoralInBetween()){
       coralIsFront = true;
+      if(frontEncoder.getVelocity()==0){
       frontEncoder.setPosition(0);
-      
+      }
     }
     return coralIsFront;
   }
