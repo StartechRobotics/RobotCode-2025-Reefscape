@@ -10,6 +10,7 @@ import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -35,6 +36,15 @@ public class RobotContainer {
   }
   public boolean isL1() {
     return m_elevator.position == 1;
+  }
+  public boolean shiftButtonTrue(){
+    return mech_controller.getRawButton(XboxController.Button.kStart.value);
+  }
+  public boolean shiftButtonFalse(){
+    return !mech_controller.getRawButton(XboxController.Button.kStart.value);
+  }
+  public boolean manualOverride(){
+    return mech_controller.getLeftTriggerAxis() > 0 || mech_controller.getRightTriggerAxis() > 0;
   }
   public double elevatorSafetyPercent(){
     return isL1() ? 1 : 0.2;
@@ -76,10 +86,12 @@ public class RobotContainer {
   private final Trigger coralOutTrigger = new JoystickButton(mech_controller, XboxController.Button.kLeftBumper.value);
   private final Trigger coralInTrigger = new JoystickButton(mech_controller, XboxController.Button.kStart.value);
   private final Trigger shooterBackwardTrigger = new Trigger(this::mech_controllerRightAxToBool);
-  private final Trigger shiftTrigger = new JoystickButton(mech_controller, XboxController.Button.kStart.value);
+  private final Trigger shiftTrigger = new Trigger(this::shiftButtonTrue);
+  private final Trigger noShiftTrigger = new Trigger(this::shiftButtonFalse);
 
   // Elevator Triggers
   private final Trigger isL1Trigger = new Trigger(this::isL1);
+  private final Trigger manualOverrideTrigger = new Trigger(this::manualOverride);
   // Grabber Triggers
   public BooleanSupplier axisGreater = this::mech_controllerLeftAxToBoolGreater;
   public BooleanSupplier axisLessThan = this::mech_controllerLeftAxToBoolLessThan;
@@ -112,27 +124,24 @@ public class RobotContainer {
   }
 
   private void configureBindings() {
-    // stopChassisTrigger.onTrue(new SequentialCommandGroup(
-        // m_chassis.stopCommand(),
-        // m_chassis.clearFaultsCommand()));
-    
-
-    // Oscar Triggers
+    stopChassisTrigger.onTrue(new SequentialCommandGroup(
+        m_chassis.stopCommand(),
+        m_chassis.clearFaultsCommand()));
     OscarTriggers(false);
 
-    intakeTrigger.and(isL1Trigger).onTrue(m_shooter.rollIntakeCommand());
     // intakeSequenceTrigger.onTrue(m_shooter.intakeTimeCommand());
   }
 
   public void OscarTriggers(boolean isSimulation){
-    l1Trigger.and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL1Position));
-    l2Trigger.and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL2Position));
-    l3Trigger.and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL3Position));
-    l4Trigger.and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL4Position));
-
+    l1Trigger.and(noShiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL1Position));
+    l2Trigger.and(noShiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL2Position));
+    l3Trigger.and(noShiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL3Position));
+    l4Trigger.and(noShiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL4Position));
+    manualOverrideTrigger.onTrue(m_elevator.dryStopCommand().andThen(m_elevator.driveCommand(mech_controller)));
     shooterBackwardTrigger.onTrue(m_shooter.takeBackCommand()).onFalse(m_shooter.stopShooterCommand());
 
     intakeTrigger.onTrue(m_shooter.rollIntakeCommand().alongWith(intakeRumble()));
+    intakeTrigger.and(isL1Trigger).onTrue(m_shooter.rollIntakeCommand());
     shootTrigger
       .onTrue(
         shootRumble()

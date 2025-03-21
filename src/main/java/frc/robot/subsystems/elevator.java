@@ -255,9 +255,12 @@ public class elevator extends SubsystemBase {
 
   public Command driveCommand(XboxController controller) {
     return Commands.run(
-        () -> this.drive(
+        () -> {this.drive(
             0.5*(controller.getRawAxis(XboxController.Axis.kRightTrigger.value)
-                - controller.getRawAxis(XboxController.Axis.kLeftTrigger.value))),
+                - controller.getRawAxis(XboxController.Axis.kLeftTrigger.value)));
+              SmartDashboard.putNumber("Elevator Movement", 
+              controller.getRightTriggerAxis()-controller.getLeftTriggerAxis());
+            },
         this);
   }
 
