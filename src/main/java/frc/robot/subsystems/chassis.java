@@ -83,7 +83,7 @@ public class chassis extends SubsystemBase {
     
   public chassis() {
     setBrakeMode();
-    group_r.setInverted(true);
+    group_l.setInverted(true);
     // izq_2.follow(izq_1);
     // der_2.follow(der_1);
     // izq_1.setInverted(true);
@@ -452,7 +452,7 @@ public class chassis extends SubsystemBase {
       () -> 
         this.arcadeDrive(
         (controller.getLeftBumperButton()? 0.4 : 1)*
-        (controller.getRawAxis(XboxController.Axis.kLeftTrigger.value)- controller.getRawAxis(XboxController.Axis.kRightTrigger.value)),
+        (controller.getRawAxis(XboxController.Axis.kRightTrigger.value)- controller.getRawAxis(XboxController.Axis.kLeftTrigger.value)),
         (Math.abs(controller.getRawAxis(Constants.ID_JOYSTICK_ROT)) > Constants.kDeadBandRot ? controller.getRawAxis(Constants.ID_JOYSTICK_ROT) : 0),
         controller.getLeftBumper()), 
       this);
