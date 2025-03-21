@@ -242,6 +242,9 @@ public class elevator extends SubsystemBase {
     }
     return output;
   }
+  public int getPosition(){
+    return position;
+  }
 
   // -------------PERIODIC-----------------
 

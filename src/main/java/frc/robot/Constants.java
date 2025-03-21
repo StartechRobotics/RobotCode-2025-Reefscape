@@ -10,7 +10,7 @@ public class Constants {
     public static final int ID_IZQ_2 = 4;
     public static final int ID_DER_1 = 5;
     public static final int ID_DER_2 = 2;
-    public static final double kSlowMode = 0.3;
+    public static final double kSlowMode = 0.45;
     // ORIGINAL ENCODERS
     public static final int ID_ENC_1A = 9;
     public static final int ID_ENC_1B = 8;
@@ -22,7 +22,7 @@ public class Constants {
     public static final double kTrackWitdth = 0.61; //61cm -> m
     public static final DifferentialDriveKinematics kDriveKinematics = 
         new DifferentialDriveKinematics(kTrackWitdth);
-    public static final double MAX_SPEED_ms2 = 3;
+    public static final double MAX_SPEED_ms2 = 4;
     public static final double MAX_ACCEL_ms2 = 3;
     public static final double MAX_MOTOR_VOLTS = 10;
     public static final double MAX_ROTATION_SPEED_RAD_S = 3*Math.PI/2;
@@ -55,8 +55,8 @@ public class Constants {
     //Elevator Constants
     public static final int ID_ELEVATOR_IZQ = 8;
     public static final int ID_ELEVATOR_DER = 9;
-    public static final double kP_elev = 0.02;
-    public static final double kI_elev = 0;
+    public static final double kP_elev = 0.025;
+    public static final double kI_elev = 0.0;
     public static final double kD_elev = 0.0;
     public static final double kS_elev = 0;
     public static final double kG_elev = 0;
@@ -80,7 +80,7 @@ public class Constants {
     public static final double MAX_SHOOTER_VOLTS = 12*0.85;
     public static final int kShooterSensorThreshold = 0;
     public static final double kIntakeCurrentThreshold = 40;
-    public static final int kProximityThreshold = 100;
+    public static final int kProximityThreshold = 200;
     
     // Hopper Constants 
 }

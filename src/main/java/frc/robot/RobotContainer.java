@@ -5,6 +5,7 @@ import java.util.function.BooleanSupplier;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
 
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -35,7 +36,7 @@ public class RobotContainer {
     return Math.abs(mech_controller.getRawAxis(XboxController.Axis.kRightY.value)) > 0.5;
   }
   public boolean isL1() {
-    return m_elevator.position == 1;
+    return m_elevator.getPosition() == 1;
   }
   public boolean shiftButtonTrue(){
     return mech_controller.getRawButton(XboxController.Button.kStart.value);
@@ -83,11 +84,12 @@ public class RobotContainer {
   private final Trigger l3Trigger = new JoystickButton(mech_controller, XboxController.Button.kX.value);
   private final Trigger l4Trigger = new JoystickButton(mech_controller, XboxController.Button.kY.value);
 
-  private final Trigger coralOutTrigger = new JoystickButton(mech_controller, XboxController.Button.kLeftBumper.value);
-  private final Trigger coralInTrigger = new JoystickButton(mech_controller, XboxController.Button.kStart.value);
   private final Trigger shooterBackwardTrigger = new Trigger(this::mech_controllerRightAxToBool);
   private final Trigger shiftTrigger = new Trigger(this::shiftButtonTrue);
   private final Trigger noShiftTrigger = new Trigger(this::shiftButtonFalse);
+
+  private final BooleanSupplier readSensor = m_shooter::checkCoralInBetween;
+  private final Trigger stopMotors = new Trigger(readSensor);
 
   // Elevator Triggers
   private final Trigger isL1Trigger = new Trigger(this::isL1);
@@ -103,6 +105,7 @@ public class RobotContainer {
   private final SendableChooser<Command> autoChooser;
 
   public RobotContainer() {
+    CameraServer.startAutomaticCapture();
     configureBindings();
     defaultCommands();
 
@@ -120,7 +123,7 @@ public class RobotContainer {
   // -------- Methods ----------
 
   private void defaultCommands() {
-    m_chassis.setDefaultCommand(m_chassis.driveCommand(drive_controller,elevatorSafetyPercent()));
+    m_chassis.setDefaultCommand(m_chassis.driveCommand(drive_controller));
     m_elevator.setDefaultCommand(m_elevator.driveCommand(mech_controller));
   }
 
@@ -145,6 +148,10 @@ public class RobotContainer {
 
     intakeTrigger.onTrue(m_shooter.rollIntakeCommand().alongWith(intakeRumble()));
     intakeTrigger.and(isL1Trigger).onTrue(m_shooter.rollIntakeCommand());
+    stopMotors.onTrue(m_shooter.autoShootSequence());
+    
+
+
     shootTrigger
       .onTrue(
         shootRumble()

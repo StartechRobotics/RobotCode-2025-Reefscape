@@ -3,6 +3,8 @@ import static edu.wpi.first.units.Units.Meters;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
+import java.util.function.BooleanSupplier;
+
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -386,7 +388,7 @@ public class chassis extends SubsystemBase {
     rot = Math.abs(rot) >= 0.001 ? rot : 0;
     speed = Math.abs(speed) >= 0.001 ? speed :0;
     speed = slowMode ? speed*Constants.kSlowMode : speed;
-    rot = slowMode ? rot*(Constants.kSlowMode*2) : rot;
+    rot = slowMode ? rot*(Constants.kSlowMode*1.75) : rot;
     double forwardSpeed = speed*Constants.MAX_SPEED_ms2;
     double rotationSpeed = rot*Constants.MAX_ROTATION_SPEED_RAD_S;
     ChassisSpeeds chassisSpeeds = new ChassisSpeeds(
@@ -444,12 +446,12 @@ public class chassis extends SubsystemBase {
 // CHASSIS LAMBDA COMMANDS -----------------------
 
   
-  public Command driveCommand(XboxController controller, double elevatorSafety){ 
+  public Command driveCommand(XboxController controller){ 
     
     return Commands.run(
       () -> 
         this.arcadeDrive(
-        elevatorSafety*
+        (controller.getLeftBumperButton()? 0.4 : 1)*
         (controller.getRawAxis(XboxController.Axis.kLeftTrigger.value)- controller.getRawAxis(XboxController.Axis.kRightTrigger.value)),
         (Math.abs(controller.getRawAxis(Constants.ID_JOYSTICK_ROT)) > Constants.kDeadBandRot ? controller.getRawAxis(Constants.ID_JOYSTICK_ROT) : 0),
         controller.getLeftBumper()), 

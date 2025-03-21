@@ -12,6 +12,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
+import edu.wpi.first.math.filter.Debouncer;
 import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.I2C.Port;
@@ -57,8 +58,6 @@ public class shooter extends SubsystemBase {
   
   @Override
   public void periodic() {
-    checkCoralFront();
-    
     dasboardLabels();
   }
 
@@ -69,6 +68,7 @@ public class shooter extends SubsystemBase {
     SmartDashboard.putBoolean("CoralInBetween", coralInBetween);
     SmartDashboard.putNumber("Front Encoder", frontEncoder.getPosition()*18/24);
     SmartDashboard.putBoolean("Grabbing", grabbingCoral);
+    SmartDashboard.putNumber("Proximity", colorSensor.getProximity());
   }
   
   // -------- Movement methods ----------
@@ -79,7 +79,7 @@ public class shooter extends SubsystemBase {
 
   public void rollIntake() {
     // m_back.setVoltage(intakeVolts);
-    m_back.set(0.2);
+    m_back.set(0.18);
   }
 
   public void slowIntake(){
@@ -165,4 +165,29 @@ public class shooter extends SubsystemBase {
       Commands.runOnce(this::stopMotors), 
       Commands.runOnce(this::resetCoralStatus));
   }
+
+  public boolean readColorSensorFallingEdge() {
+    return colorSensor.getProximity() > kProximityThreshold;
+  }
+
+  public boolean readColorSensorFree(){
+    return colorSensor.getProximity() < kProximityThreshold;
+  }
+
+  public Command autoShootSequence() {
+    return new SequentialCommandGroup(
+        // Paso 1: Encender llantas traseras
+        Commands.runOnce(() -> m_back.set(0.1)),
+        
+        // Paso 2: Esperar detección de objeto con el sensor
+        // Commands.waitSeconds),        
+        // Paso 3: Encender llantas delanteras y reducir velocidad
+        
+        // Paso 4: Esperar el flanco de bajada (objeto deja de estar presente)
+        Commands.waitUntil(this::readColorSensorFree),
+        
+        // Paso 5: Apagar ambos motores
+        Commands.runOnce(this::stopMotors)
+    );
+}
 }
