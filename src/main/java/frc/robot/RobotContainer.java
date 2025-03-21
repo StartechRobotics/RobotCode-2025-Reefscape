@@ -106,7 +106,7 @@ public class RobotContainer {
     configureBindings();
     defaultCommands();
 
-    autoChooser = AutoBuilder.buildAutoChooser("auto 1");
+    autoChooser = AutoBuilder.buildAutoChooser();
     autoChooser.setDefaultOption("Avanzar Short (Default)", new PathPlannerAuto("avanzar short"));
     autoChooser.addOption("Lado del Barge", new PathPlannerAuto("barge1"));
     autoChooser.addOption("Lado del Processor", new PathPlannerAuto("processor1"));
@@ -136,7 +136,9 @@ public class RobotContainer {
   public void OscarTriggers(boolean isSimulation){
     l1Trigger.and(noShiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL1Position));
     l2Trigger.and(noShiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL2Position));
+    l2Trigger.and(shiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kAlgae1Position));
     l3Trigger.and(noShiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL3Position));
+    l3Trigger.and(shiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kAlgae2Position));
     l4Trigger.and(noShiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL4Position));
     manualOverrideTrigger.onTrue(m_elevator.dryStopCommand().andThen(m_elevator.driveCommand(mech_controller)));
     shooterBackwardTrigger.onTrue(m_shooter.takeBackCommand()).onFalse(m_shooter.stopShooterCommand());

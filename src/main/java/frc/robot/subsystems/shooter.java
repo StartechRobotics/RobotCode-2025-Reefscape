@@ -58,6 +58,7 @@ public class shooter extends SubsystemBase {
   @Override
   public void periodic() {
     checkCoralFront();
+    
     dasboardLabels();
   }
 
