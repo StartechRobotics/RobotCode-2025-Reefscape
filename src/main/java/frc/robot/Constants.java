@@ -71,8 +71,8 @@ public class Constants {
     public static final double kL2Position = 36;
     public static final double kL3Position = 102;
     public static final double kL4Position = 102;
-    public static final double kAlgae1Position = 29;
-    public static final double kAlgae2Position = 95;
+    public static final double kAlgae1Position = 94;
+    public static final double kAlgae2Position = 157;
 
     // Shooter Constants
     public static final int ID_SHOOTER_BACK = 6;
