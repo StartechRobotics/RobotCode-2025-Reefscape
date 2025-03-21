@@ -132,11 +132,7 @@ public class RobotContainer {
 
     shooterBackwardTrigger.onTrue(m_shooter.takeBackCommand()).onFalse(m_shooter.stopShooterCommand());
 
-    intakeTrigger.onTrue(m_shooter.rollIntakeCommand());
-    intakeTrigger
-      .onTrue(
-        Commands.runOnce(() -> SmartDashboard.putBoolean("Trigger", true))
-      .alongWith(intakeRumble()));
+    intakeTrigger.onTrue(m_shooter.rollIntakeCommand().alongWith(intakeRumble()));
     shootTrigger
       .onTrue(
         shootRumble()

@@ -66,6 +66,8 @@ public class shooter extends SubsystemBase {
     SmartDashboard.putNumber("Current Lowpassed Value m_back", lowpassFilter.calculate(m_back.getOutputCurrent()));
     SmartDashboard.putBoolean("Has Coral", coralIsFront);
     SmartDashboard.putBoolean("CoralInBetween", coralInBetween);
+    SmartDashboard.putNumber("Front Encoder", frontEncoder.getPosition()*18/24);
+    SmartDashboard.putBoolean("Grabbing", grabbingCoral);
   }
   
   // -------- Movement methods ----------
@@ -76,7 +78,7 @@ public class shooter extends SubsystemBase {
 
   public void rollIntake() {
     // m_back.setVoltage(intakeVolts);
-    m_back.set(checkCoralGrabbing()?0.1:0.2);
+    m_back.set(0.2);
   }
 
   public void slowIntake(){
@@ -91,7 +93,8 @@ public class shooter extends SubsystemBase {
   }
 
   public void takeBack(){
-    m_back.set(-0.1);
+    m_back.set(-0.15);
+    m_front.set(-0.15);
   }
 
   public void manualDrive(double frontPercent, double backPercent) {
