@@ -26,42 +26,43 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotInit(){
-    try {
-      visionThread = new Thread(() -> {
-        // Start the camera
-        UsbCamera camera = CameraServer.startAutomaticCapture();
-        camera.setResolution(640, 480);
+    CameraServer.startAutomaticCapture(0);
+    // try {
+    //   visionThread = new Thread(() -> {
+    //     // Start the camera
+    //     UsbCamera camera = CameraServer.startAutomaticCapture();
+    //     camera.setResolution(640, 480);
 
-        CvSink cvSink = CameraServer.getVideo();
-        CvSource outputStream = CameraServer.putVideo("Processed", 640, 480);
-        Mat frame = new Mat();
-        Shuffleboard.getTab("Vision").add("Processed", camera);
+    //     CvSink cvSink = CameraServer.getVideo();
+    //     CvSource outputStream = CameraServer.putVideo("Processed", 640, 480);
+    //     Mat frame = new Mat();
+    //     Shuffleboard.getTab("Vision").add("Processed", camera);
         
 
-        while (!Thread.interrupted()) {
-          if (cvSink.grabFrame(frame) == 0) {
-            outputStream.notifyError(cvSink.getError());
-            continue;
-          }
+    //     while (!Thread.interrupted()) {
+    //       if (cvSink.grabFrame(frame) == 0) {
+    //         outputStream.notifyError(cvSink.getError());
+    //         continue;
+    //       }
 
-          // Draw two vertical lines
-          int x1 = frame.width() / 3; // First line at 1/3 of the width
-          int x2 = 2 * frame.width() / 3; // Second line at 2/3 of the width
+    //       // Draw two vertical lines
+    //       int x1 = frame.width() / 3; // First line at 1/3 of the width
+    //       int x2 = 2 * frame.width() / 3; // Second line at 2/3 of the width
 
-          Imgproc.line(frame, new Point(x1, 0), new Point(x1, frame.height()), new Scalar(0, 255, 0), 2);
-          Imgproc.line(frame, new Point(x2, 0), new Point(x2, frame.height()), new Scalar(0, 255, 0), 2);
+    //       Imgproc.line(frame, new Point(x1, 0), new Point(x1, frame.height()), new Scalar(0, 255, 0), 2);
+    //       Imgproc.line(frame, new Point(x2, 0), new Point(x2, frame.height()), new Scalar(0, 255, 0), 2);
 
-          outputStream.putFrame(frame);
-        }
-      });
+    //       outputStream.putFrame(frame);
+    //     }
+    //   });
 
-      visionThread.setDaemon(true);
-      visionThread.start();
+    //   visionThread.setDaemon(true);
+    //   visionThread.start();
       
       
-    } catch (Exception e) {
-      System.out.println("Error in vision thread");
-    }
+    // } catch (Exception e) {
+    //   System.out.println("Error in vision thread");
+    // }
 }
   
 
@@ -71,7 +72,9 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    CommandScheduler.getInstance().cancelAll();
+  }
 
   @Override
   public void disabledPeriodic() {}
