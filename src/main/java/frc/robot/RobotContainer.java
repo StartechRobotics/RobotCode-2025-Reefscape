@@ -55,6 +55,7 @@ public class RobotContainer {
   public shooter m_shooter = new shooter();
   public elevator m_elevator = new elevator();
   public grabber m_grabber = new grabber();
+  public hopper m_hopper = new hopper();
 
   // // SysID Tests Triggers
   public Trigger dynamfwdTrigger = new JoystickButton(test_controller,XboxController.Button.kY.value);
@@ -157,15 +158,17 @@ public class RobotContainer {
 
     grabTrigger.onTrue(m_grabber.grabCommand()).onFalse(m_grabber.stopCommand());
     dropTrigger.onTrue(m_grabber.dropCommand()).onFalse(m_grabber.stopCommand());
+
+    l1Trigger.and(shiftTrigger).onTrue(m_hopper.openCommand());
   } 
 
   public void RobotCharacterizations() {
     // SysID TEST COMMAND BINDINGS - TEMP DISABLED
-    dynamfwdTrigger.onTrue(m_chassis.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    quasifwdTrigger.onTrue(m_chassis.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    quasibwdTrigger.onTrue(m_chassis.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    dynambwdTrigger.onTrue(m_chassis.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-    stopTestTrigger.onTrue(m_chassis.stopCommand());
+    // dynamfwdTrigger.onTrue(m_chassis.sysIdDynamic(SysIdRoutine.Direction.kForward));
+    // quasifwdTrigger.onTrue(m_chassis.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+    // quasibwdTrigger.onTrue(m_chassis.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+    // dynambwdTrigger.onTrue(m_chassis.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+    // stopTestTrigger.onTrue(m_chassis.stopCommand());
   }
 
   public void StatesMachine() {

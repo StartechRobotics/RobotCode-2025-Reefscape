@@ -4,25 +4,39 @@
 
 package frc.robot.subsystems;
 
+import edu.wpi.first.wpilibj.Servo;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 public class hopper extends SubsystemBase {
+  private Servo servo = new Servo(Constants.ID_HOPPER_SERVO);
+  private static final double kClosedAngle = 0;
+  private static final double kOpenAngle = 180;
+  private double position;
 
   public hopper() {
     close();
   }
 
   private final void open(){
+    position = kOpenAngle;
   }
 
   private final void close(){
+    position = kClosedAngle;
   }
 
   // Commands -----
   public Command openCommand(){
-    return Commands.run(this::open, this);
+    return new SequentialCommandGroup(
+      Commands.run(this::open, this),
+      Commands.waitSeconds(1),
+      Commands.run(this::close, this)
+      );
   }
 
   public Command closeCommand(){
@@ -31,5 +45,7 @@ public class hopper extends SubsystemBase {
 
   @Override
   public void periodic(){
+    servo.setAngle(position);
+    SmartDashboard.putNumber("Servo Angle", servo.getAngle());
   }
 }

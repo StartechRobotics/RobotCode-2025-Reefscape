@@ -19,7 +19,7 @@ public class grabber extends SubsystemBase {
   public final SparkMax m_grabber = new SparkMax(Constants.ID_GRABBER, MotorType.kBrushless);
   public SparkMaxConfig sparkConfig = new SparkMaxConfig();
   private MutVoltage grabVoltage = new MutVoltage(Constants.kGrabVolts, 3, Volts);
-  private MutVoltage dropVoltage = new MutVoltage(Constants.kDropVolts, -3, Volts);
+  private MutVoltage dropVoltage = new MutVoltage(Constants.kDropVolts, -8, Volts);
   public grabber() {
     sparkConfig.idleMode(IdleMode.kBrake);
     m_grabber.configure(sparkConfig, ResetMode.kResetSafeParameters ,PersistMode.kPersistParameters);

@@ -373,8 +373,8 @@ public class chassis extends SubsystemBase {
     }
     double angularVelocity = chassisSpeeds.omegaRadiansPerSecond;
     rot_monitor = angularVelocity;
-    double leftVelocity = forwardXSpeed + (angularVelocity * Constants.kTrackWitdth / 2);
-    double rightVelocity = forwardXSpeed - (angularVelocity * Constants.kTrackWitdth / 2);
+    double leftVelocity = forwardXSpeed - (angularVelocity * Constants.kTrackWitdth / 2);
+    double rightVelocity = forwardXSpeed + (angularVelocity * Constants.kTrackWitdth / 2);
 
     double leftVolts = Constants.MAX_MOTOR_VOLTS*(leftVelocity/Constants.MAX_SPEED_ms2);
     double rightVolts = Constants.MAX_MOTOR_VOLTS*(rightVelocity/Constants.MAX_SPEED_ms2);

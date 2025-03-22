@@ -81,6 +81,10 @@ public class Constants {
     public static final int kShooterSensorThreshold = 0;
     public static final double kIntakeCurrentThreshold = 40;
     public static final int kProximityThreshold = 200;
-    
+
     // Hopper Constants 
+    public static final int ID_HOPPER_SERVO = 0;
+
+    // Climber Constants
+
 }
