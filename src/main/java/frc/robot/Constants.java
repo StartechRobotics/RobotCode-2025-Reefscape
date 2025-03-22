@@ -22,10 +22,10 @@ public class Constants {
     public static final double kTrackWitdth = 0.61; //61cm -> m
     public static final DifferentialDriveKinematics kDriveKinematics = 
         new DifferentialDriveKinematics(kTrackWitdth);
-    public static final double MAX_SPEED_ms2 = 4;
+    public static final double MAX_SPEED_ms2 = 5;
     public static final double MAX_ACCEL_ms2 = 3;
     public static final double MAX_MOTOR_VOLTS = 10;
-    public static final double MAX_ROTATION_SPEED_RAD_S = 3*Math.PI/2;
+    public static final double MAX_ROTATION_SPEED_RAD_S = 3.5*Math.PI/2;
     public static final double kS_chassisLeft = 0;
     public static final double kV_chassisLeft = 0;
     public static final double kA_chassisLeft = 0;
@@ -69,7 +69,7 @@ public class Constants {
     public static final double kDistancetoFloorInches = 26.48;
     public static final double kL1Position = 0;
     public static final double kL2Position = 36;
-    public static final double kL3Position = 102;
+    public static final double kL3Position = 106;
     public static final double kL4Position = 102;
     public static final double kAlgae1Position = 94;
     public static final double kAlgae2Position = 157;

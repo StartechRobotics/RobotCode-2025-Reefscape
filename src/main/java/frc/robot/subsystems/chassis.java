@@ -359,8 +359,10 @@ public class chassis extends SubsystemBase {
   }
 
   public void setMotorVolts(Voltage l_volts, Voltage r_volts){
-    group_l.setVoltage(lFeedforward.calculate(l_volts.magnitude()));
-    group_r.setVoltage(rFeedforward.calculate(r_volts.magnitude()));
+    // group_l.setVoltage(lFeedforward.calculate(l_volts.magnitude()));
+    // group_r.setVoltage(rFeedforward.calculate(r_volts.magnitude()));
+    group_l.setVoltage(l_volts);
+    group_r.setVoltage(r_volts);
     differentialDrive.feed();
   }
 
@@ -456,6 +458,10 @@ public class chassis extends SubsystemBase {
         (Math.abs(controller.getRawAxis(Constants.ID_JOYSTICK_ROT)) > Constants.kDeadBandRot ? controller.getRawAxis(Constants.ID_JOYSTICK_ROT) : 0),
         controller.getLeftBumper()), 
       this);
+  }
+
+  public Command arcadeDriveCommand(double speed,double rot){
+    return Commands.run(()->arcadeDrive(speed, rot, false));
   }
 
   public Command resetGyroCommand(){

@@ -11,7 +11,6 @@ import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -58,16 +57,11 @@ public class RobotContainer {
   public grabber m_grabber = new grabber();
 
   // // SysID Tests Triggers
-  public Trigger dynamfwdTrigger = new JoystickButton(test_controller,
-  XboxController.Button.kY.value);
-  public Trigger quasifwdTrigger = new JoystickButton(test_controller,
-  XboxController.Button.kA.value);
-  public Trigger dynambwdTrigger = new JoystickButton(test_controller,
-  XboxController.Button.kB.value);
-  public Trigger quasibwdTrigger = new JoystickButton(test_controller,
-  XboxController.Button.kLeftStick.value);
-  public Trigger stopTestTrigger = new JoystickButton(test_controller,
-  XboxController.Button.kX.value);
+  public Trigger dynamfwdTrigger = new JoystickButton(test_controller,XboxController.Button.kY.value);
+  public Trigger quasifwdTrigger = new JoystickButton(test_controller,XboxController.Button.kA.value);
+  public Trigger dynambwdTrigger = new JoystickButton(test_controller,XboxController.Button.kB.value);
+  public Trigger quasibwdTrigger = new JoystickButton(test_controller,XboxController.Button.kLeftStick.value);
+  public Trigger stopTestTrigger = new JoystickButton(test_controller,XboxController.Button.kX.value);
 
   // Chassis Triggers
   public Trigger stopChassisTrigger = new JoystickButton(drive_controller, XboxController.Button.kX.value);
@@ -108,12 +102,14 @@ public class RobotContainer {
     CameraServer.startAutomaticCapture();
     configureBindings();
     defaultCommands();
+    RobotCharacterizations();
 
     autoChooser = AutoBuilder.buildAutoChooser();
     autoChooser.setDefaultOption("Avanzar Short (Default)", new PathPlannerAuto("avanzar short"));
     autoChooser.addOption("Lado del Barge", new PathPlannerAuto("barge1"));
     autoChooser.addOption("Lado del Processor", new PathPlannerAuto("processor1"));
     autoChooser.addOption("Reef Centro", new PathPlannerAuto("reef1"));
+    autoChooser.addOption("Autonomo de Tiempo L1", timedAutoCommand());
     SmartDashboard.putData("AutoChooser",autoChooser);
 
     SmartDashboard.putData("Reset Gyro", m_chassis.resetGyroCommand());
@@ -132,8 +128,6 @@ public class RobotContainer {
         m_chassis.stopCommand(),
         m_chassis.clearFaultsCommand()));
     OscarTriggers(false);
-
-    // intakeSequenceTrigger.onTrue(m_shooter.intakeTimeCommand());
   }
 
   public void OscarTriggers(boolean isSimulation){
@@ -149,9 +143,6 @@ public class RobotContainer {
     intakeTrigger.onTrue(m_shooter.rollIntakeCommand().alongWith(intakeRumble()));
     intakeTrigger.and(isL1Trigger).onTrue(m_shooter.rollIntakeCommand());
     stopMotors.onTrue(m_shooter.autoShootSequence());
-    
-
-
     shootTrigger
       .onTrue(
         shootRumble()
@@ -203,6 +194,16 @@ public class RobotContainer {
         m_shooter.shootCommand(),
         new WaitCommand(1).andThen(m_shooter.stopShooterCommand()),
         m_elevator.driveToTargetCommand(Constants.kL1Position));
+  }
+
+  public Command timedAutoCommand(){
+    return new SequentialCommandGroup(
+      m_chassis.arcadeDriveCommand(0.5, 0),
+      Commands.waitSeconds(1),
+      m_chassis.stopCommand(),
+      m_elevator.driveToTargetCommand(Constants.kL1Position),
+      m_shooter.shootCommand()
+    );
   }
 }
 
