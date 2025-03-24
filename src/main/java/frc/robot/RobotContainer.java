@@ -1,13 +1,18 @@
 package frc.robot;
 
+import java.util.function.BooleanSupplier;
+
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.commands.PathPlannerAuto;
-// import com.revrobotics.ColorSensorV3;
 
+import edu.wpi.first.cameraserver.CameraServer;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.GenericHID.RumbleType;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
@@ -20,46 +25,95 @@ public class RobotContainer {
   public XboxController drive_controller = new XboxController(Constants.ID_DRIVER_CHASSIS);
   public XboxController mech_controller = new XboxController(Constants.ID_DRIVER_MECH);
   public XboxController test_controller = new XboxController(Constants.ID_TEST_CONTROLLER);
+  
+  public boolean mech_controllerLeftAxToBoolGreater() {
+    return mech_controller.getRawAxis(XboxController.Axis.kLeftY.value) > 0.5;
+  }
+  public boolean mech_controllerLeftAxToBoolLessThan() {
+    return mech_controller.getRawAxis(XboxController.Axis.kLeftY.value) < -0.5;
+  }
+  public boolean mech_controllerRightAxToBool() {
+    return Math.abs(mech_controller.getRawAxis(XboxController.Axis.kRightY.value)) > 0.5;
+  }
+  public boolean isL1() {
+    return m_elevator.getPosition() == 1;
+  }
+  public boolean shiftButtonTrue(){
+    return mech_controller.getRawButton(XboxController.Button.kStart.value);
+  }
+  public boolean shiftButtonFalse(){
+    return !mech_controller.getRawButton(XboxController.Button.kStart.value);
+  }
+  public boolean manualOverride(){
+    return mech_controller.getLeftTriggerAxis() > 0 || mech_controller.getRightTriggerAxis() > 0;
+  }
+  public double elevatorSafetyPercent(){
+    return isL1() ? 1 : 0.2;
+  }
 
   // Subsystems Instances
   public chassis m_chassis = new chassis();
   public shooter m_shooter = new shooter();
   public elevator m_elevator = new elevator();
-  public hopper m_hopper = new hopper();
-  // public grabber m_grabber = new grabber();
+  public grabber m_grabber = new grabber();
 
-  // public ColorSensorV3 shooterSensor = m_shooter.getSensor();
-
-  // SysID Tests Triggers
-  public Trigger dynamfwdTrigger = new JoystickButton(test_controller, XboxController.Button.kY.value);
-  public Trigger quasifwdTrigger = new JoystickButton(test_controller, XboxController.Button.kA.value);
-  public Trigger dynambwdTrigger = new JoystickButton(test_controller, XboxController.Button.kB.value);
-  public Trigger quasibwdTrigger = new JoystickButton(test_controller, XboxController.Button.kLeftStick.value);
-  public Trigger stopTestTrigger = new JoystickButton(test_controller, XboxController.Button.kX.value);
+  // // SysID Tests Triggers
+  public Trigger dynamfwdTrigger = new JoystickButton(test_controller,
+  XboxController.Button.kY.value);
+  public Trigger quasifwdTrigger = new JoystickButton(test_controller,
+  XboxController.Button.kA.value);
+  public Trigger dynambwdTrigger = new JoystickButton(test_controller,
+  XboxController.Button.kB.value);
+  public Trigger quasibwdTrigger = new JoystickButton(test_controller,
+  XboxController.Button.kLeftStick.value);
+  public Trigger stopTestTrigger = new JoystickButton(test_controller,
+  XboxController.Button.kX.value);
 
   // Chassis Triggers
   public Trigger stopChassisTrigger = new JoystickButton(drive_controller, XboxController.Button.kX.value);
 
   // Shooter Triggers
-  public Trigger intakeTrigger = new JoystickButton(mech_controller, XboxController.Button.kA.value);
-  public Trigger shooterStopTrigger = new JoystickButton(mech_controller, XboxController.Button.kX.value);
-  public Trigger shootTrigger = new JoystickButton(mech_controller, XboxController.Button.kY.value);
-  public Trigger intakeSequenceTrigger = new JoystickButton(mech_controller, XboxController.Button.kB.value);
-  // public Trigger coralInTrigger = new Trigger(()->{return shooterSensor.getProximity() > Constants.kShooterSensorThreshold;});
+  public Trigger intakeTrigger = new JoystickButton(mech_controller, XboxController.Button.kRightBumper.value);
+  public Trigger shootTrigger = new JoystickButton(mech_controller, XboxController.Button.kLeftBumper.value);
+  public Trigger isTrackFree = new Trigger(m_shooter::checkCoralInBetween);
+  public Trigger hasCoral = new Trigger(m_shooter::hasCoral);
 
+  // Oscar Triggers
+  private final Trigger l1Trigger = new JoystickButton(mech_controller, XboxController.Button.kB.value);
+  private final Trigger l2Trigger = new JoystickButton(mech_controller, XboxController.Button.kA.value);
+  private final Trigger l3Trigger = new JoystickButton(mech_controller, XboxController.Button.kX.value);
+  private final Trigger l4Trigger = new JoystickButton(mech_controller, XboxController.Button.kY.value);
+
+  private final Trigger shooterBackwardTrigger = new Trigger(this::mech_controllerRightAxToBool);
+  private final Trigger shiftTrigger = new Trigger(this::shiftButtonTrue);
+  private final Trigger noShiftTrigger = new Trigger(this::shiftButtonFalse);
+
+  private final BooleanSupplier readSensor = m_shooter::checkCoralInBetween;
+  private final Trigger stopMotors = new Trigger(readSensor);
+
+  // Elevator Triggers
+  private final Trigger isL1Trigger = new Trigger(this::isL1);
+  private final Trigger manualOverrideTrigger = new Trigger(this::manualOverride);
+  // Grabber Triggers
+  public BooleanSupplier axisGreater = this::mech_controllerLeftAxToBoolGreater;
+  public BooleanSupplier axisLessThan = this::mech_controllerLeftAxToBoolLessThan;
+  public Trigger grabTrigger = new Trigger(axisGreater);
+  public Trigger dropTrigger = new Trigger(axisLessThan);
   // Hopper Triggers
   public Trigger openHoppTrigger = new JoystickButton(test_controller, XboxController.Button.kA.value);
 
   private final SendableChooser<Command> autoChooser;
 
   public RobotContainer() {
+    CameraServer.startAutomaticCapture();
     configureBindings();
     defaultCommands();
 
-    autoChooser = AutoBuilder.buildAutoChooser("auto 1");
-    autoChooser.setDefaultOption("test auto (Default Momentan)", new PathPlannerAuto("test auto"));
-    autoChooser.addOption("auto 0", new PathPlannerAuto("auto 0"));
-    autoChooser.addOption("auto 1", new PathPlannerAuto("auto 1"));
+    autoChooser = AutoBuilder.buildAutoChooser();
+    autoChooser.setDefaultOption("Avanzar Short (Default)", new PathPlannerAuto("avanzar short"));
+    autoChooser.addOption("Lado del Barge", new PathPlannerAuto("barge1"));
+    autoChooser.addOption("Lado del Processor", new PathPlannerAuto("processor1"));
+    autoChooser.addOption("Reef Centro", new PathPlannerAuto("reef1"));
     SmartDashboard.putData("AutoChooser",autoChooser);
 
     SmartDashboard.putData("Reset Gyro", m_chassis.resetGyroCommand());
@@ -69,62 +123,97 @@ public class RobotContainer {
   // -------- Methods ----------
 
   private void defaultCommands() {
-    m_shooter.setDefaultCommand(m_shooter.manualShooterCommand(mech_controller));
+    m_chassis.setDefaultCommand(m_chassis.driveCommand(drive_controller));
     m_elevator.setDefaultCommand(m_elevator.driveCommand(mech_controller));
-    m_hopper.setDefaultCommand(m_hopper.closeCommand());
   }
-  
+
   private void configureBindings() {
     stopChassisTrigger.onTrue(new SequentialCommandGroup(
-      m_chassis.stopCommand(), 
-      m_chassis.clearFaultsCommand()
-    ));
-    intakeTrigger.onTrue(m_shooter.intakeCommand());
-    shootTrigger.onTrue(m_shooter.shootCommand());
-    shooterStopTrigger.onTrue(m_shooter.stopShooterCommand());
-    intakeSequenceTrigger.onTrue(m_shooter.intakeTimeCommand());
-    // coralInTrigger.onTrue(m_shooter.stopShooterCommand(m_shooter));
-    openHoppTrigger.onTrue(m_hopper.openCommand());
-    openHoppTrigger.onFalse(m_hopper.closeCommand()); 
+        m_chassis.stopCommand(),
+        m_chassis.clearFaultsCommand()));
+    OscarTriggers(false);
+
+    // intakeSequenceTrigger.onTrue(m_shooter.intakeTimeCommand());
   }
 
-  public void RobotCharacterizations(){
+  public void OscarTriggers(boolean isSimulation){
+    l1Trigger.and(noShiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL1Position));
+    l2Trigger.and(noShiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL2Position));
+    l2Trigger.and(shiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kAlgae1Position));
+    l3Trigger.and(noShiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL3Position));
+    l3Trigger.and(shiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kAlgae2Position));
+    l4Trigger.and(noShiftTrigger).and(isTrackFree).onTrue(m_elevator.driveToTargetCommand(Constants.kL4Position));
+    manualOverrideTrigger.onTrue(m_elevator.dryStopCommand().andThen(m_elevator.driveCommand(mech_controller)));
+    shooterBackwardTrigger.onTrue(m_shooter.takeBackCommand()).onFalse(m_shooter.stopShooterCommand());
+
+    intakeTrigger.onTrue(m_shooter.rollIntakeCommand().alongWith(intakeRumble()));
+    intakeTrigger.and(isL1Trigger).onTrue(m_shooter.rollIntakeCommand());
+    stopMotors.onTrue(m_shooter.autoShootSequence());
+    
+
+
+    shootTrigger
+      .onTrue(
+        shootRumble()
+        .andThen(m_shooter.shootCommand())
+        .andThen(noRumble())
+      );
+    shiftTrigger
+      .onTrue(
+        m_shooter.stopShooterCommand()
+        .alongWith(noRumble())
+      );
+
+    grabTrigger.onTrue(m_grabber.grabCommand()).onFalse(m_grabber.stopCommand());
+    dropTrigger.onTrue(m_grabber.dropCommand()).onFalse(m_grabber.stopCommand());
+  } 
+
+  public void RobotCharacterizations() {
     // SysID TEST COMMAND BINDINGS - TEMP DISABLED
-    dynamfwdTrigger.onTrue(m_elevator.sysIdDynamic(SysIdRoutine.Direction.kForward));
-    quasifwdTrigger.onTrue(m_elevator.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
-    quasibwdTrigger.onTrue(m_elevator.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
-    dynambwdTrigger.onTrue(m_elevator.sysIdDynamic(SysIdRoutine.Direction.kReverse));
-    stopTestTrigger.onTrue(m_elevator.dryStopCommand());
+    dynamfwdTrigger.onTrue(m_chassis.sysIdDynamic(SysIdRoutine.Direction.kForward));
+    quasifwdTrigger.onTrue(m_chassis.sysIdQuasistatic(SysIdRoutine.Direction.kForward));
+    quasibwdTrigger.onTrue(m_chassis.sysIdQuasistatic(SysIdRoutine.Direction.kReverse));
+    dynambwdTrigger.onTrue(m_chassis.sysIdDynamic(SysIdRoutine.Direction.kReverse));
+    stopTestTrigger.onTrue(m_chassis.stopCommand());
   }
 
-  public void StatesMachine(){
-    // Add states machine here
+  public void StatesMachine() {
+    hasCoral.onTrue(m_shooter.stopShooterCommand());
   }
-  
+
   public Command getAutonomousCommand() {
     Command autoCommand = autoChooser.getSelected();
+    // Command autoCommand = null;
     return autoCommand != null ? autoCommand : new WaitCommand(0); // Evita NullPointerException
   }
 
-  // Compound Commands  --------
-  public Command shootAndDropSequence(){
+  // Custom Commands --------
+  public Command intakeRumble(){
+    return Commands.runOnce(()->mech_controller.setRumble(RumbleType.kLeftRumble, 0.7));
+  }
+  public Command shootRumble(){
+    return Commands.runOnce(()->mech_controller.setRumble(RumbleType.kRightRumble, 0.7));
+  }
+  public Command noRumble(){
+    return Commands.runOnce(()->mech_controller.setRumble(RumbleType.kBothRumble, 0));
+  }
+
+  public Command shootAndDropSequence() {
     return new SequentialCommandGroup(
-      m_shooter.shootCommand(),
-      new WaitCommand(1).andThen(m_shooter.stopShooterCommand()),
-      m_elevator.driveToTargetCommand(Constants.kElevatorBottomPosition)
-    );
+        m_shooter.shootCommand(),
+        new WaitCommand(1).andThen(m_shooter.stopShooterCommand()),
+        m_elevator.driveToTargetCommand(Constants.kL1Position));
   }
 }
 
 /*
  * CODE PENDING TASKS
- * - Do robot characterization tests for subsystem elevator
- * - Set the colorsensor to the shooter subsystem
- * - Add the color sensor to the shuffleboard for coral identification
- * - Add subsystems for passive mechanisms
- * - Add climber subsystem
- * - Add subsystem for vision processing
+ * - Do robot characterization tests for subsystem elevator (Pit)
+ * - Add climber subsystem (Discontinued)
+ * - Add subsystem for vision processing (Discontinued)
  * - Test PathPlannerAuto
- * - Configure voltages and thresholds for the subsystems: grabber, shooter, elevator
+ * - Configure voltages and thresholds for the subsystems: grabber, shooter,
+ * elevator
+ * - Change to NavX for the gyro
  * 
  */

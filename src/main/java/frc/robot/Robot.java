@@ -1,27 +1,32 @@
 package frc.robot;
 
+import edu.wpi.first.cameraserver.CameraServer;
+import edu.wpi.first.cscore.UsbCamera;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
   private final RobotContainer m_robotContainer;
-  private final String defaultDriveController = "XboxDrive";
-  private String controller_type_selected;
-  private final SendableChooser<String> m_driveControllerChooser = new SendableChooser<>();
+
 
   public Robot() {
     m_robotContainer = new RobotContainer();
-    m_driveControllerChooser.setDefaultOption("Xbox controller", defaultDriveController);
+
+
+    
+    // camera.setResolution(640, 480);
+    // camera.setFPS(30);
+    // Shuffleboard.getTab("Vision").add(camera);
   }
 
   @Override
   public void robotInit(){
-    SmartDashboard.putData(m_driveControllerChooser);
+    
   }
+  
 
   @Override
   public void robotPeriodic() {
@@ -29,7 +34,9 @@ public class Robot extends TimedRobot {
   }
 
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    CommandScheduler.getInstance().cancelAll();
+  }
 
   @Override
   public void disabledPeriodic() {}
@@ -56,14 +63,7 @@ public class Robot extends TimedRobot {
   public void teleopInit() {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
-    }
-    controller_type_selected = m_driveControllerChooser.getSelected();
-    switch (controller_type_selected) {
-      default:
-        m_robotContainer.m_chassis.setDefaultCommand(m_robotContainer.m_chassis.driveCommand(m_robotContainer.drive_controller));
-      break;
-    }
-      
+    }      
   }
 
   @Override

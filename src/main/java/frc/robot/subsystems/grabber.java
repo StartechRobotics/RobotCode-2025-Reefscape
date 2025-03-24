@@ -18,8 +18,8 @@ import frc.robot.Constants;
 public class grabber extends SubsystemBase {
   public final SparkMax m_grabber = new SparkMax(Constants.ID_GRABBER, MotorType.kBrushless);
   public SparkMaxConfig sparkConfig = new SparkMaxConfig();
-  private MutVoltage grabVoltage = new MutVoltage(Constants.kGrabVolts, 1, Volts);
-  private MutVoltage dropVoltage = new MutVoltage(Constants.kDropVolts, 1, Volts);
+  private MutVoltage grabVoltage = new MutVoltage(Constants.kGrabVolts, 3, Volts);
+  private MutVoltage dropVoltage = new MutVoltage(Constants.kDropVolts, -3, Volts);
   public grabber() {
     sparkConfig.idleMode(IdleMode.kBrake);
     m_grabber.configure(sparkConfig, ResetMode.kResetSafeParameters ,PersistMode.kPersistParameters);
@@ -43,15 +43,15 @@ public class grabber extends SubsystemBase {
   }
 
   // -------- LAMBDA COMMANDS ------
-  public Command grabCommand(grabber c_grabber){
-    return Commands.runOnce(()-> c_grabber.grab(),c_grabber);
+  public Command grabCommand(){
+    return Commands.runOnce(this::grab);
   }
 
-  public Command dropCommand(grabber c_grabber){
-    return Commands.runOnce(() -> c_grabber.drop(),c_grabber );
+  public Command dropCommand(){
+    return Commands.runOnce(this::drop);
   }
 
-  public Command stopCommand(grabber c_grabber){
-    return Commands.runOnce(() -> c_grabber.stopGrabber(), c_grabber);
+  public Command stopCommand(){
+    return Commands.runOnce(this::stopGrabber);
   }
 }
