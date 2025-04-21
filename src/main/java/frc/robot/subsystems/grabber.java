@@ -10,6 +10,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.units.measure.MutVoltage;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -20,6 +21,7 @@ public class grabber extends SubsystemBase {
   public SparkMaxConfig sparkConfig = new SparkMaxConfig();
   private MutVoltage grabVoltage = new MutVoltage(Constants.kGrabVolts, 3, Volts);
   private MutVoltage dropVoltage = new MutVoltage(Constants.kDropVolts, -8, Volts);
+  public boolean grabberSafe = true;
   public grabber() {
     sparkConfig.idleMode(IdleMode.kBrake);
     m_grabber.configure(sparkConfig, ResetMode.kResetSafeParameters ,PersistMode.kPersistParameters);
@@ -27,7 +29,8 @@ public class grabber extends SubsystemBase {
 
   @Override
   public void periodic() {
-
+    SmartDashboard.putNumber("Grabber Temp", m_grabber.getMotorTemperature());
+    grabberSafe = m_grabber.getMotorTemperature() < 35;
   }
   // --------- SIMPLE METHODS -------
   public void stopGrabber(){
@@ -41,6 +44,10 @@ public class grabber extends SubsystemBase {
   public void drop(){
     m_grabber.setVoltage(dropVoltage);
   }
+
+  public boolean isGrabberSafe(){
+    return grabberSafe;
+  } 
 
   // -------- LAMBDA COMMANDS ------
   public Command grabCommand(){

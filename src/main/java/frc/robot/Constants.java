@@ -86,5 +86,9 @@ public class Constants {
     public static final int ID_HOPPER_SERVO = 0;
 
     // Climber Constants
+    public static final int ID_CLIMBER = 25;
+    public static final double kHangingPosition = 0;
+    public static final double kNeutralPosition = 0;
+    public static final double kExtendPosition = 0;
 
 }

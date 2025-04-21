@@ -56,6 +56,7 @@ public class RobotContainer {
   public elevator m_elevator = new elevator();
   public grabber m_grabber = new grabber();
   public hopper m_hopper = new hopper();
+  // public climber m_climber = new climber();
 
   // // SysID Tests Triggers
   public Trigger dynamfwdTrigger = new JoystickButton(test_controller,XboxController.Button.kY.value);
@@ -86,6 +87,12 @@ public class RobotContainer {
   private final BooleanSupplier readSensor = m_shooter::checkCoralInBetween;
   private final Trigger stopMotors = new Trigger(readSensor);
 
+  // Alam Triggers
+  // private final Trigger extendClimbTrigger = new JoystickButton(drive_controller, XboxController.Button.kB.value);
+  // private final Trigger retractClimbTrigger = new JoystickButton(drive_controller, XboxController.Button.kY.value);
+  // private final Trigger stopClimbTrigger = new JoystickButton(drive_controller, XboxController.Button.kX.value);
+  // private final Trigger neutralClimbTrigger = new JoystickButton(drive_controller, XboxController.Button.kA.value);
+
   // Elevator Triggers
   private final Trigger isL1Trigger = new Trigger(this::isL1);
   private final Trigger manualOverrideTrigger = new Trigger(this::manualOverride);
@@ -94,6 +101,7 @@ public class RobotContainer {
   public BooleanSupplier axisLessThan = this::mech_controllerLeftAxToBoolLessThan;
   public Trigger grabTrigger = new Trigger(axisGreater);
   public Trigger dropTrigger = new Trigger(axisLessThan);
+  public Trigger grabberSafeTrigger = new Trigger(m_grabber::isGrabberSafe);
   // Hopper Triggers
   public Trigger openHoppTrigger = new JoystickButton(test_controller, XboxController.Button.kA.value);
 
@@ -156,11 +164,20 @@ public class RobotContainer {
         .alongWith(noRumble())
       );
 
-    grabTrigger.onTrue(m_grabber.grabCommand()).onFalse(m_grabber.stopCommand());
+    grabberSafeTrigger.and(grabTrigger).onTrue(m_grabber.grabCommand()).onFalse(m_grabber.stopCommand());
     dropTrigger.onTrue(m_grabber.dropCommand()).onFalse(m_grabber.stopCommand());
+
+    grabTrigger.whileFalse(m_grabber.stopCommand());
 
     l1Trigger.and(shiftTrigger).onTrue(m_hopper.openCommand());
   } 
+
+  // public void AlamTriggers(){
+  //   extendClimbTrigger.onTrue(m_climber.extendCommand());
+  //   retractClimbTrigger.onTrue(m_climber.retractCommand());
+  //   stopClimbTrigger.onTrue(m_climber.stopCommand());
+  //   neutralClimbTrigger.onTrue(m_climber.setNeutralCommand());
+  // }
 
   public void RobotCharacterizations() {
     // SysID TEST COMMAND BINDINGS - TEMP DISABLED
